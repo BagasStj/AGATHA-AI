@@ -65,18 +65,29 @@ export default function AIChat() {
     setInput(value)
   }
 
+  useEffect(() => {
+    const handleResize = () => {
+      setSidebarOpen(window.innerWidth > 768)
+    }
+
+    window.addEventListener('resize', handleResize)
+    handleResize() // Set initial state
+
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
     <>
-    <div className="flex h-[85vh] m-4 -mt-[3px]">
-      {sidebarOpen && (
-        <Sidebar
+       <div className="flex h-[85vh] m-4 -mt-[3px]">
+      <Sidebar
         chatHistory={chatHistory}
         startNewChat={startNewChat}
         loadChat={loadChat}
         model={model}
         setModel={setModel}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
-      )}
       <ChatArea
         messages={messages}
         input={input}

@@ -19,7 +19,12 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat'>('chat');
+  // const [currentView, setCurrentView] = useState<'users' | 'chat'>('chat');
+  const [currentView, setCurrentView] = useState<'users' | 'chat'>('users');
+
+  const handleViewChange = (view: 'users' | 'chat') => {
+    setCurrentView(view);
+  };
 
 
   const fetchUserData = async () => {
@@ -143,15 +148,23 @@ const handleDeleteUser = async (id: string) => {
     const weekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
     return date >= weekAgo && date <= today;
   }
+
   
+  
+  // const [currentViewH, setCurrentViewH] = useState<'users' | 'chat' | 'dashboard'>('chat');
 
 
   return (
     <TooltipProvider>
-       <div className="flex min-h-screen w-full flex-col bg-muted/40">
-        <AsideComponent onViewChange={setCurrentView} currentView={currentView} />
-        <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-        <HeaderComponent currentUser={currentUser} onLogout={handleLogout} currentView={currentView} />
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
+      <AsideComponent onViewChange={handleViewChange} currentView={currentView} />
+      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
+        <HeaderComponent 
+          currentUser={currentUser} 
+          onLogout={handleLogout} 
+          currentView={currentView}  
+          onViewChange={handleViewChange} 
+        />
         {currentView === 'users' ? (
           <DashboardUserComponent 
             userCount={userCount} 
@@ -169,8 +182,8 @@ const handleDeleteUser = async (id: string) => {
           <AIChat />
         )}
       </div>
-      </div>
-    </TooltipProvider>
+    </div>
+  </TooltipProvider>
   )
 }
 

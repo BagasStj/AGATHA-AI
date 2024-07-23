@@ -1,16 +1,18 @@
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { PlusIcon, ClockIcon, HashIcon } from 'lucide-react'
+import { PlusIcon, ClockIcon, HashIcon, XIcon } from 'lucide-react'
 
 type SidebarProps = {
-  chatHistory: { id: string; title: string; messages: any[]; timestamp: number | string }[]
-  startNewChat: () => void
-  loadChat: (chatId: string) => void
-  model: 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k'
-  setModel: (model: 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k') => void
+    chatHistory: { id: string; title: string; messages: any[]; timestamp: number | string }[]
+    startNewChat: () => void
+    loadChat: (chatId: string) => void
+    model: 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k'
+    setModel: (model: 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k') => void
+    isOpen: boolean
+    onClose: () => void
 }
 
-export default function Sidebar({ chatHistory, startNewChat, loadChat, model, setModel }: SidebarProps) {
+export default function Sidebar({ chatHistory, startNewChat, loadChat, model, setModel, isOpen, onClose }: SidebarProps) {
     const formatDate = (timestamp: number | string) => {
         if (typeof timestamp === 'number') { 
           const date = new Date(timestamp);
@@ -24,10 +26,15 @@ export default function Sidebar({ chatHistory, startNewChat, loadChat, model, se
       }
 
   return (
-    <aside className="w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4">
-      <Button onClick={startNewChat} className="mb-4 bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 shadow-sm">
-        <PlusIcon className="mr-2 h-4 w-4" /> New chat
-      </Button>
+    <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+      <div className="flex justify-between items-center mb-4">
+        <Button onClick={startNewChat} className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 shadow-sm">
+          <PlusIcon className="mr-2 h-4 w-4" /> New chat
+        </Button>
+        <Button onClick={onClose} variant="ghost" className="md:hidden">
+          <XIcon className="h-5 w-5" />
+        </Button>
+      </div>
       <ScrollArea className="flex-grow">
         {chatHistory.map((chat) => (
           <div key={chat.id} className="mb-2">

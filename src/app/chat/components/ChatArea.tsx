@@ -51,12 +51,13 @@ export default function ChatArea({
   
   return (
     <main className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden">
-      <header className="border-b border-gray-200 p-4">
-        <Button onClick={() => setSidebarOpen(!sidebarOpen)} variant="ghost" className="text-gray-500">
-          <MenuIcon className="h-5 w-5" />
-        </Button>
-      </header>
-      <ScrollArea className="flex-grow">
+    <header className="border-b border-gray-200 p-4">
+      <Button onClick={() => setSidebarOpen(!sidebarOpen)} variant="ghost" className="text-gray-500 md:hidden">
+        <MenuIcon className="h-5 w-5" />
+      </Button>
+    </header>
+    <div className="flex-grow flex flex-col">
+      <ScrollArea className="flex-grow pt-4">
         <div className="max-w-2xl mx-auto py-4 px-4">
           {messages.map(m => (
             <div key={m.id} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
@@ -77,6 +78,7 @@ export default function ChatArea({
         </div>
         <div ref={messagesEndRef} />
       </ScrollArea>
+      </div>
       <footer className="p-4 bg-white border-t border-gray-200">
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto relative">
         <Input

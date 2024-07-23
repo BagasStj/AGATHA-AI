@@ -19,7 +19,7 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat'>('chat');
 
 
   const fetchUserData = async () => {

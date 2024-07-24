@@ -12,8 +12,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Slider } from "@/components/ui/slider"
-import { toast } from '@/components/ui/use-toast';
+import { Slider } from "@/components/ui/slider" 
+import { useToast } from "@/components/ui/use-toast";
+
 
 
 type SidebarProps = {
@@ -66,6 +67,7 @@ export default function Sidebar({
     const [tempFrequencyPenalty, setTempFrequencyPenalty] = useState(frequencyPenalty ?? 0);
     const [tempMaxTokens, setTempMaxTokens] = useState(maxTokens ?? 2048);
     const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
 
 
     useEffect(() => {
@@ -86,6 +88,7 @@ export default function Sidebar({
         setFrequencyPenalty(tempFrequencyPenalty);
         setMaxTokens(tempMaxTokens);
         setIsPromptDialogOpen(false);
+        
         try {
             const response = await fetch('/api/chat/settings', {
                 method: 'POST',
@@ -114,14 +117,14 @@ export default function Sidebar({
                 description: "Your chat settings have been successfully saved.",
             });
         } catch (error) {
-            console.error('Error saving chat settings:', error);
-            // Optionally, show an error message to the user
-            console.error('Error saving chat settings:', error);
             toast({
                 title: "Error",
                 description: "Failed to save chat settings. Please try again.",
                 variant: "destructive",
             });
+            console.error('Error saving chat settings:', error);
+            // Optionally, show an error message to the user
+           
         }
         finally {
             setIsLoading(false);

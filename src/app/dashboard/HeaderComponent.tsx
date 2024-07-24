@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import Link from "next/link"
-import { UserButton, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -36,18 +35,18 @@ import { Home, MessageSquare, PanelLeft, Search, User, Users2, X } from "lucide-
 interface HeaderComponentProps {
   currentUser: any;
   onLogout: () => void;
-  currentView: 'users' | 'chat' | 'email';
-  onViewChange: (view: 'users' | 'chat' | 'email') => void;
+  currentView: 'users' | 'chat';
+  onViewChange: (view: 'users' | 'chat') => void;
 }
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email') => {
+  const handleViewChange = (view: 'users' | 'chat') => {
     onViewChange(view);
     setIsOpen(false);
   };
-
+  
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 shadow-sm sm:px-6">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -62,27 +61,28 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
             <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
           </SheetHeader>
           <nav className="space-y-4" aria-label="Main Navigation">
-            {['users', 'chat', 'email'].map((view) => (
+            {['users', 'chat'].map((view) => (
               <Link
                 key={view}
                 href="#"
-                onClick={() => handleViewChange(view as 'users' | 'chat' | 'email')}
-                className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors ${currentView === view
-                  ? 'bg-gray-100 text-gray-9000'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                onClick={() => handleViewChange(view as 'users' | 'chat')}
+                className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors ${
+                  currentView === view 
+                    ? 'bg-gray-100 text-gray-900' 
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                }`}
               >
                 {view === 'users' ? <Users2 className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
                 {view.charAt(0).toUpperCase() + view.slice(1)}
               </Link>
             ))}
           </nav>
-          <Button onClick={() => setIsOpen(false)} className="absolute top-4 right-4">
+          <Button onClick={() => setIsOpen(false)}  className="absolute top-4 right-4">
             <X className="h-4 w-4" />
           </Button>
         </SheetContent>
       </Sheet>
-
+      
       <Breadcrumb className="hidden md:flex">
         <BreadcrumbList>
           <BreadcrumbItem>
@@ -102,21 +102,9 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
               </BreadcrumbItem>
             </>
           )}
-          {currentView === 'email' && (
-            <>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="#" onClick={() => onViewChange('email')} className="text-gray-600 hover:text-gray-900">
-                    Email
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </>
-          )}
         </BreadcrumbList>
       </Breadcrumb>
-
+      
       <div className="relative ml-auto flex-1 md:max-w-xs">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
@@ -125,15 +113,8 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
           className="w-full rounded-full bg-gray-100 pl-10 pr-4 focus:bg-white focus:ring-2 focus:ring-blue-500"
         />
       </div>
-      <div>
-        <SignedIn>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
-      </div>
-      {/* <DropdownMenu>
+      
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -176,7 +157,7 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
             </AlertDialogContent>
           </AlertDialog>
         </DropdownMenuContent>
-      </DropdownMenu> */}
+      </DropdownMenu>
     </header>
   )
 }

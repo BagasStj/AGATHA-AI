@@ -1,3 +1,6 @@
+import { Toaster } from "@/components/ui/toaster"
+
+
 export default function ChatLayout({
     children,
   }: {
@@ -6,6 +9,7 @@ export default function ChatLayout({
     return (
       <div className="min-h-screen bg-gray-100 p-4">
         {children}
+        <Toaster />
       </div>
     )
   }

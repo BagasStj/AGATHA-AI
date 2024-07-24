@@ -8,7 +8,6 @@ import { HeaderComponent } from './HeaderComponent'
 import { AsideComponent } from './AsideComponent' 
 import { UserTable } from '../user/UserTable' 
 import AIChat from '../chat/page'
-import EmailPage from '../email/page'
 
 
 export default function Dashboard() {
@@ -20,9 +19,10 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email'>('users');
+  // const [currentView, setCurrentView] = useState<'users' | 'chat'>('chat');
+  const [currentView, setCurrentView] = useState<'users' | 'chat'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email') => {
+  const handleViewChange = (view: 'users' | 'chat') => {
     setCurrentView(view);
   };
 
@@ -162,7 +162,7 @@ const handleDeleteUser = async (id: string) => {
         <HeaderComponent 
           currentUser={currentUser} 
           onLogout={handleLogout} 
-          currentView={currentView as 'users' | 'chat' | 'email'}  
+          currentView={currentView}  
           onViewChange={handleViewChange} 
         />
         {currentView === 'users' ? (
@@ -178,15 +178,14 @@ const handleDeleteUser = async (id: string) => {
             onDeleteUser={handleDeleteUser}
             onAddUser={handleAddUser}
           />
-        ) : currentView === 'chat' ? (
-          <AIChat />
         ) : (
-          <EmailPage />
+          <AIChat />
         )}
       </div>
     </div>
   </TooltipProvider>
   )
 }
+
 
 

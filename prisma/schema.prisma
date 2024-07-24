@@ -11,7 +11,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+ //  directUrl = env("DIRECT_URL")
 }
 
 
@@ -24,3 +24,15 @@ datasource db {
      createdAt DateTime @default(now())
      updatedAt DateTime @updatedAt
    }
+
+   model ChatSettings {
+  id               Int      @id @default(autoincrement())
+  prompt           String
+  temperature      Float
+  topP             Float
+  presencePenalty  Float
+  frequencyPenalty Float
+  maxTokens        Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

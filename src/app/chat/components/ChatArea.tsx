@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { SendIcon, MenuIcon, UserIcon, MicIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 type ChatAreaProps = {
   messages: any[]
@@ -28,6 +28,12 @@ export default function ChatArea({
 }: ChatAreaProps) {
 
     const [isListening, setIsListening] = useState(false)
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
 const startListening = () => {
   setIsListening(true)
@@ -68,8 +74,8 @@ const stopListening = () => {
         <MenuIcon className="h-5 w-5" />
       </Button>
     </header>
-    <div className="flex-grow flex flex-col">
-      <ScrollArea className="flex-grow pt-4">
+    <div className="flex-grow flex flex-col overflow-hidden">
+      <ScrollArea className="flex-grow h-full">
         <div className="max-w-2xl mx-auto py-4 px-4">
           {messages.map(m => (
             <div key={m.id} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
@@ -79,16 +85,15 @@ const stopListening = () => {
                 }`} style={m.role === 'user' ? {} : { backgroundColor: 'rgb(0 0 0)', color: 'white' }}>
                   {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : 'AI'}
                 </div>
-                <div className="flex-grow">
-                  <div className="text-sm font-semibold mb-1"> 
-                  </div>
-                  <div className="text-gray-800">{m.content}</div>
+                <div className="flex-grow overflow-hidden">
+                  <div className="text-sm font-semibold mb-1"></div>
+                  <div className="text-gray-800 break-words">{m.content}</div>
                 </div>
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
-        <div ref={messagesEndRef} />
       </ScrollArea>
       </div>
       <footer className="p-4 bg-white border-t border-gray-200">

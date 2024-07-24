@@ -29,25 +29,37 @@ export default function ChatArea({
 
     const [isListening, setIsListening] = useState(false)
 
-    const startListening = () => {
-        setIsListening(true)
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        const recognition = new SpeechRecognition()
-        recognition.lang = 'en-US'
-        recognition.interimResults = false
-    
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript
-          handleInputChange(transcript)
-        }
-    
-        recognition.onend = () => {
-          setIsListening(false)
-        }
-    
-        recognition.start()
-      }
-    
+const startListening = () => {
+  setIsListening(true)
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  const recognition = new SpeechRecognition()
+  recognition.lang = 'en-US'
+  recognition.continuous = true
+  recognition.interimResults = true
+
+  recognition.onresult = (event: any) => {
+    const transcript = Array.from(event.results)
+      .map((result: any) => result[0])
+      .map((result: any) => result.transcript)
+      .join('')
+    handleInputChange(transcript)
+  }
+
+  recognition.onend = () => {
+    setIsListening(false)
+  }
+
+  recognition.start()
+
+  return () => {
+    recognition.stop()
+    setIsListening(false)
+  }
+}
+
+const stopListening = () => {
+  setIsListening(false)
+}
   
   return (
     <main className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -87,14 +99,13 @@ export default function ChatArea({
       placeholder="Send a message"
       className="w-full bg-white border border-gray-300 focus-visible:ring-1 focus-visible:ring-gray-300 text-gray-800 pr-24 shadow-sm"
     />
-          <Button
-            type="button"
-            onClick={startListening}
-            disabled={isListening}
-            className="absolute right-12 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100"
-          >
-            <MicIcon className={`h-5 w-5 ${isListening ? 'text-red-500' : 'text-gray-500'}`} />
-          </Button>
+       <Button
+  type="button"
+  onClick={isListening ? stopListening : startListening}
+  className="absolute right-12 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100"
+>
+  <MicIcon className={`h-5 w-5 ${isListening ? 'text-red-500' : 'text-gray-500'}`} />
+</Button>
           <Button type="submit" disabled={isLoading} className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent hover:bg-gray-100">
             <SendIcon className="h-5 w-5 text-gray-500" />
           </Button>

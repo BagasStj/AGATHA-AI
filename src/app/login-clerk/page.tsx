@@ -1,4 +1,3 @@
-
 import {
     ClerkProvider,
     SignInButton,
@@ -6,24 +5,19 @@ import {
     SignedOut,
     UserButton
 } from '@clerk/nextjs'
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+
+export default function LoginPage() {
     return (
         <ClerkProvider>
-            <html lang="en">
-                <body>
-                    <SignedOut>
-                        <SignInButton />
-                    </SignedOut>
-                    <SignedIn>
-                        <UserButton />
-                    </SignedIn>
-                    {children}
-                </body>
-            </html>
+            <div>
+                <SignedOut>
+                    <SignInButton />
+                </SignedOut>
+                <SignedIn>
+                    <UserButton />
+                </SignedIn>
+                <h1>Login Page Content</h1>
+            </div>
         </ClerkProvider>
     )
 }

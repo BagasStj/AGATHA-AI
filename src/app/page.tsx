@@ -1,7 +1,8 @@
-import LoginForm from "./auth/login/page"; 
+import { UserButton, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import Dashboard from "./dashboard/page";
 
 export default function Home() {
-  return ( 
-  <LoginForm /> 
-);
+  return (
+    <Dashboard/>
+  )
 }

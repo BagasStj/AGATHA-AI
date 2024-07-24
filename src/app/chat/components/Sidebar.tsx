@@ -68,6 +68,40 @@ export default function Sidebar({
     const [tempMaxTokens, setTempMaxTokens] = useState(maxTokens ?? 2048);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
+
+    useEffect(() => {
+        if (successMessage) {
+            toast({
+                title: "Success",
+                description: successMessage,
+                duration: 3000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
+            const timer = setTimeout(() => {
+                setSuccessMessage("");
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage, toast]);
+
+    useEffect(() => {
+        if (errorMessage) {
+            toast({
+                title: "Error",
+                description: errorMessage,
+                duration: 3000,
+                variant: "destructive",
+                className: "bg-red-100 border-red-400 text-red-700",
+            });
+            const timer = setTimeout(() => {
+                setErrorMessage("");
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [errorMessage, toast]);
 
 
     useEffect(() => {
@@ -112,16 +146,11 @@ export default function Sidebar({
             // Handle successful response
             const result = await response.json();
             console.log('Chat settings saved:', result);
-            toast({
-                title: "Settings saved",
-                description: "Your chat settings have been successfully saved.",
-            });
+           
+            setSuccessMessage("Your chat settings have been successfully saved.");
         } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to save chat settings. Please try again.",
-                variant: "destructive",
-            });
+            setErrorMessage("Failed to save chat settings. Please try again.");
+        
             console.error('Error saving chat settings:', error);
             // Optionally, show an error message to the user
            
@@ -136,7 +165,10 @@ export default function Sidebar({
         return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
     }
 
+   
+
     return (
+        <>
         <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
             <div className="flex justify-between items-center mb-4">
                 <Button onClick={startNewChat} className="bg-gray-50 hover:bg-gray-100 text-gray-800 border border-gray-200 shadow-sm">
@@ -272,5 +304,6 @@ export default function Sidebar({
                 </Button>
             </div>
         </aside>
+        </>
     )
 }

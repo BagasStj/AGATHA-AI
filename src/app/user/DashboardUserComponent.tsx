@@ -104,7 +104,7 @@ export function DashboardUserComponent({
         </Card>
 
       </div>
-      <Tabs defaultValue="day">
+      <Tabs defaultValue="total">
         <div className="flex items-center">
           <TabsList>
             <TabsTrigger value="day">Day</TabsTrigger>

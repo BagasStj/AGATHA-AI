@@ -8,8 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastProvider } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
-import { EditorContent, EditorRoot } from 'novel';
-// Remove the import for Icons as it's not found and not used in this component
 
 function EmailPageContent() {
     const [emailStatus, setEmailStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -47,7 +45,23 @@ function EmailPageContent() {
     };
 
     return (
-        <div className="container mx-auto p-4 max-w-2xl">
+        <div className="container mx-auto p-4 space-y-6">
+            <Card className="shadow-lg">
+                <CardHeader className="space-y-1">
+                    <CardTitle className="text-2xl font-bold">AI Chat Email Sender</CardTitle>
+                    <CardDescription>
+                        Enhance your email communication with AI-powered assistance.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>
+                        Our AI Chat Email Sender combines the power of artificial intelligence with email functionality. 
+                        It helps you craft professional, context-aware emails quickly and efficiently. 
+                        Simply input your recipient, subject, and message, and let our AI enhance your communication.
+                    </p>
+                </CardContent>
+            </Card>
+
             <Card className="shadow-lg">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Send Email</CardTitle>

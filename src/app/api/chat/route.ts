@@ -4,9 +4,12 @@ import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages
 
 export const runtime = 'edge'
 
+console.log('API route is being executed')
 export async function POST(req: Request) {
   const { messages, model, temperature, prompt, topP, presencePenalty, frequencyPenalty, maxTokens } = await req.json()
   const { stream, handlers } = LangChainStream()
+
+  
 
   const currentTime = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
   
@@ -21,9 +24,18 @@ export async function POST(req: Request) {
     openAIApiKey: process.env.OPENAI_API_KEY,
   })
 
-  
-  
-  const systemMessage = new SystemMessage(prompt || ` You are operating with a temperature of ${temperature}, topP of ${topP}, presence penalty of ${presencePenalty}, frequency penalty of ${frequencyPenalty}, and max tokens of ${maxTokens}.`)
+  console.log('LLM Configuration:', {
+    modelName: llm.modelName,
+    temperature: llm.temperature,
+    topP: llm.topP,
+    presencePenalty: llm.presencePenalty,
+    frequencyPenalty: llm.frequencyPenalty,
+    maxTokens: llm.maxTokens,
+  })
+
+  const systemMessage = new SystemMessage(prompt || `You are an AI assistant. Current time: ${currentTime}. You are operating with a temperature of ${temperature}, topP of ${topP}, presence penalty of ${presencePenalty}, frequency penalty of ${frequencyPenalty}, and max tokens of ${maxTokens}.`)
+  console.log('System Message:', systemMessage.content)
+
   llm.call(
     [
       systemMessage,

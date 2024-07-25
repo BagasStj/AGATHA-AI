@@ -10,24 +10,36 @@ export default function AIChat() {
     const [currentChatId, setCurrentChatId] = useState<string | null>(null)
     const [model, setModel] = useState<'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k'>('gpt-3.5-turbo')
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const [prompt, setPrompt] = useState<string>('')
+    const [prompt, setPrompt] = useState<string>('You are a helpful AI assistant. Answer the user\'s questions to the best of your ability.')
 
     // const [chatHistory, setChatHistory] = useState([])
     // const [model, setModel] = useState<'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k'>('gpt-3.5-turbo')
     // const [prompt, setPrompt] = useState('')
-    const [temperature, setTemperature] = useState(0.7)
+    const [temperature, setTemperature] = useState(0.5)
     const [topP, setTopP] = useState(1)
     const [presencePenalty, setPresencePenalty] = useState(0)
     const [frequencyPenalty, setFrequencyPenalty] = useState(0)
     const [maxTokens, setMaxTokens] = useState(2048)
+    const [title, setTitle] = useState<string>('')
 
     
 
     const { messages, input, handleSubmit, isLoading, reload, setMessages, setInput } = useChat({
         api: '/api/chat',
         id: currentChatId ?? undefined,
-        body: { model, prompt },
+        body: { 
+            model, 
+            prompt,
+            temperature,
+            topP,
+            presencePenalty,
+            frequencyPenalty,
+            maxTokens
+        },
         onFinish: (message) => {
+            // console.log("masuk", prompt);
+            // console.log("model", model);
+            // console.log("temperature", temperature);
             if (currentChatId) {
                 setChatHistory(prev => prev.map(chat => 
                     chat.id === currentChatId 
@@ -61,7 +73,7 @@ export default function AIChat() {
         
         setMessages([])
         setCurrentChatId(Date.now().toString())
-        setPrompt('')
+        // setPrompt('')
     }
 
     const loadChat = (chatId: string) => {
@@ -89,6 +101,10 @@ export default function AIChat() {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
+    const [currentPrompt, setCurrentPrompt] = useState<any | null>(null);
+    const [currentTitle, setCurrentTitle] = useState("Chat AI");
+  
+
     return (
         <>
             <div className="flex h-[85vh] m-4 -mt-[3px]">
@@ -112,6 +128,10 @@ export default function AIChat() {
                 setFrequencyPenalty={setFrequencyPenalty}
                 maxTokens={maxTokens}
                 setMaxTokens={setMaxTokens}
+                title={title}
+                setTitle={setTitle}
+                setCurrentPrompt={setCurrentPrompt}
+                setCurrentTitle={setCurrentTitle}
                 />
                 <ChatArea
                     messages={messages}
@@ -122,6 +142,7 @@ export default function AIChat() {
                     messagesEndRef={messagesEndRef}
                     sidebarOpen={sidebarOpen}
                     setSidebarOpen={setSidebarOpen}
+                    title={currentTitle}
                 />
             </div>
         </>

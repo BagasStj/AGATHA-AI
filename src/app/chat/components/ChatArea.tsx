@@ -7,13 +7,15 @@ import { useState, useEffect } from 'react'
 type ChatAreaProps = {
   messages: any[]
   input: string
-//   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleInputChange: (value: string) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   isLoading: boolean
   messagesEndRef: React.RefObject<HTMLDivElement>
   sidebarOpen: boolean
   setSidebarOpen: (open: boolean) => void
+  title?: string
+  description?: string
+  currentPromptDescription?: string
 }
 
 export default function ChatArea({
@@ -24,7 +26,10 @@ export default function ChatArea({
   isLoading,
   messagesEndRef,
   sidebarOpen,
-  setSidebarOpen
+  setSidebarOpen,
+  title = "Chat AI",
+  description = "Start a conversation with the AI assistant.",
+  currentPromptDescription = "Start a conversation with the AI assistant."
 }: ChatAreaProps) {
 
     const [isListening, setIsListening] = useState(false)
@@ -69,7 +74,8 @@ const stopListening = () => {
   
   return (
     <main className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden">
-    <header className="border-b border-gray-200 p-4">
+    <header className="border-b border-gray-200 p-4 flex justify-between items-center">
+      <h1 className="text-lg font-semibold text-gray-800">{title}</h1>
       <Button onClick={() => setSidebarOpen(!sidebarOpen)} variant="ghost" className="text-gray-500 md:hidden">
         <MenuIcon className="h-5 w-5" />
       </Button>
@@ -77,21 +83,28 @@ const stopListening = () => {
     <div className="flex-grow flex flex-col overflow-hidden">
       <ScrollArea className="flex-grow h-full">
         <div className="max-w-2xl mx-auto py-4 px-4">
-          {messages.map(m => (
-            <div key={m.id} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
-              <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                  m.role === 'user' ? 'bg-gray-200 ml-4' : 'mr-4'
-                }`} style={m.role === 'user' ? {} : { backgroundColor: 'rgb(0 0 0)', color: 'white' }}>
-                  {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : 'AI'}
-                </div>
-                <div className="flex-grow overflow-hidden">
-                  <div className="text-sm font-semibold mb-1"></div>
-                  <div className="text-gray-800 break-words">{m.content}</div>
+          {messages.length === 0 ? (
+            <div className="text-center py-10">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">{title}</h2>
+              <p className="text-gray-600">{currentPromptDescription}</p>
+            </div>
+          ) : (
+            messages.map(m => (
+              <div key={m.id} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
+                <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                    m.role === 'user' ? 'bg-gray-200 ml-4' : 'mr-4'
+                  }`} style={m.role === 'user' ? {} : { backgroundColor: 'rgb(0 0 0)', color: 'white' }}>
+                    {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : 'AI'}
+                  </div>
+                  <div className="flex-grow overflow-hidden">
+                    <div className="text-sm font-semibold mb-1"></div>
+                    <div className="text-gray-800 break-words">{m.content}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

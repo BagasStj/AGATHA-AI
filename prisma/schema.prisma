@@ -36,3 +36,18 @@ datasource db {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+
+   model PromptSettings {
+  id               Int      @id @default(autoincrement())
+  title           String
+  prompt           String
+  temperature      Float
+  topP             Float
+  presencePenalty  Float
+  frequencyPenalty Float
+  maxTokens        Int
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+

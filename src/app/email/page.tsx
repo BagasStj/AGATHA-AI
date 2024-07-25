@@ -50,7 +50,23 @@ function EmailPageContent() {
     };
 
     return (
-        <div className="container mx-auto p-4 max-w-2xl">
+        <div className="container mx-auto p-4 space-y-6">
+            <Card className="shadow-lg">
+                <CardHeader className="space-y-1">
+                    <CardTitle className="text-2xl font-bold">AI Chat Email Sender</CardTitle>
+                    <CardDescription>
+                        Enhance your email communication with AI-powered assistance.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>
+                        Our AI Chat Email Sender combines the power of artificial intelligence with email functionality. 
+                        It helps you craft professional, context-aware emails quickly and efficiently. 
+                        Simply input your recipient, subject, and message, and let our AI enhance your communication.
+                    </p>
+                </CardContent>
+            </Card>
+
             <Card className="shadow-lg">
                 <CardHeader className="space-y-1">
                     <CardTitle className="text-2xl font-bold">Send Email</CardTitle>

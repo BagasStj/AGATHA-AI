@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ToastProvider } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
+import { EditorContent, EditorRoot } from 'novel';
 // Remove the import for Icons as it's not found and not used in this component
 
 function EmailPageContent() {

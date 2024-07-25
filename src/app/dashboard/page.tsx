@@ -9,6 +9,7 @@ import { AsideComponent } from './AsideComponent'
 import { UserTable } from '../user/UserTable' 
 import AIChat from '../chat/page'
 import EmailPage from '../email/page'
+import ProductDetail from '../product/[productId]/page'
 
 
 export default function Dashboard() {
@@ -20,9 +21,9 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product') => {
     setCurrentView(view);
   };
 
@@ -180,6 +181,8 @@ const handleDeleteUser = async (id: string) => {
           />
         ) : currentView === 'chat' ? (
           <AIChat />
+        ) : currentView === 'product' ? (
+          <ProductDetail />
         ) : (
           <EmailPage />
         )}

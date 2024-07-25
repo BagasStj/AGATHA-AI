@@ -35,8 +35,9 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
 
   return (
     <EditorRoot>
+      <h1 className="text-2xl font-bold mb-4 text-center">TEXT EDITOR WITH NOVEL</h1>
       <EditorContent
-        className="border p-4 rounded-xl"
+        className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-xl bg-white dark:bg-gray-800 shadow-lg"
         {...(initialValue && { initialContent: initialValue })}
         extensions={extensions}
         editorProps={{
@@ -55,24 +56,24 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
         }}
         slotAfter={<ImageResizer />}
       >
-        <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
-          <EditorCommandEmpty className="px-2 text-muted-foreground">
+        <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-3 shadow-xl transition-all">
+          <EditorCommandEmpty className="px-3 py-2 text-gray-500 dark:text-gray-400">
             No results
           </EditorCommandEmpty>
-          <EditorCommandList>
+          <EditorCommandList className="space-y-1">
             {suggestionItems.map((item) => (
               <EditorCommandItem
                 value={item.title}
                 onCommand={(val) => item.command?.(val)}
-                className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:bg-accent aria-selected:bg-accent `}
+                className="flex w-full items-center space-x-3 rounded-md px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 key={item.title}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-muted bg-background">
+                <div className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
                   {item.icon}
                 </div>
                 <div>
                   <p className="font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {item.description}
                   </p>
                 </div>
@@ -85,16 +86,14 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
           tippyOptions={{
             placement: "top",
           }}
-          className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
+          className="flex w-fit max-w-[90vw] overflow-hidden rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl"
         >
-          <Separator orientation="vertical" />
           <NodeSelector open={openNode} onOpenChange={setOpenNode} />
-          <Separator orientation="vertical" />
-
+          <Separator orientation="vertical" className="h-full bg-gray-200 dark:bg-gray-700" />
           <LinkSelector open={openLink} onOpenChange={setOpenLink} />
-          <Separator orientation="vertical" />
+          <Separator orientation="vertical" className="h-full bg-gray-200 dark:bg-gray-700" />
           <TextButtons />
-          <Separator orientation="vertical" />
+          <Separator orientation="vertical" className="h-full bg-gray-200 dark:bg-gray-700" />
           <ColorSelector open={openColor} onOpenChange={setOpenColor} />
         </EditorBubble>
       </EditorContent>

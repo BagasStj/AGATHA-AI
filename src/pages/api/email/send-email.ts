@@ -8,7 +8,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const { firstName, to, subject } = req.body;
 
   const { data, error } = await resend.emails.send({
-    from: 'Acme <onboarding@resend.dev>',
+    from: 'Acme <onboarding@send>',
     to: [to],
     subject: subject,
     react: EmailTemplate({ firstName: firstName }),

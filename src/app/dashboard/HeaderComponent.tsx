@@ -36,8 +36,8 @@ import { Home, MessageSquare, PanelLeft, Search, User, Users2, X } from "lucide-
 interface HeaderComponentProps {
   currentUser: any;
   onLogout: () => void;
-  currentView: 'users' | 'chat' | 'email';
-  onViewChange: (view: 'users' | 'chat' | 'email') => void;
+  currentView: 'users' | 'chat' | 'email' | 'product';
+  onViewChange: (view: 'users' | 'chat' | 'email' | 'product') => void;
 }
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
@@ -109,6 +109,18 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
                 <BreadcrumbLink asChild>
                   <Link href="#" onClick={() => onViewChange('email')} className="text-gray-600 hover:text-gray-900">
                     Email
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </>
+          )}
+          {currentView === 'product' && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="#" onClick={() => onViewChange('product')} className="text-gray-600 hover:text-gray-900">
+                    Product
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>

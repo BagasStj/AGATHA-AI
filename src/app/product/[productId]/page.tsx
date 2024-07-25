@@ -94,7 +94,7 @@ export default function ProductDetail() {
               </div>
             </div>
             <div className="mt-3 sm:mt-4">
-              <h4 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">What's Included:</h4>
+              <h4 className="font-semibold text-sm sm:text-base mb-1 sm:mb-2">What&lsquo;s Included:</h4>
               <ul className="space-y-1">
                 {product.includedFeatures.map((feature, index) => (
                   <li key={index} className="flex items-center text-xs text-gray-600">

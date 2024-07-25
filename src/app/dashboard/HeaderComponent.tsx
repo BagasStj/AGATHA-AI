@@ -36,14 +36,14 @@ import { Home, MessageSquare, PanelLeft, Search, User, Users2, X } from "lucide-
 interface HeaderComponentProps {
   currentUser: any;
   onLogout: () => void;
-  currentView: 'users' | 'chat' | 'email' | 'product';
-  onViewChange: (view: 'users' | 'chat' | 'email' | 'product') => void;
+  currentView: 'users' | 'chat' | 'email' | 'product' | 'novel';
+  onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel') => void;
 }
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel') => {
     onViewChange(view);
     setIsOpen(false);
   };
@@ -62,7 +62,7 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
             <SheetTitle className="text-lg font-semibold">Menu</SheetTitle>
           </SheetHeader>
           <nav className="space-y-4" aria-label="Main Navigation">
-            {['users', 'chat', 'email'].map((view) => (
+            {['users', 'chat', 'email', 'product', 'novel'].map((view) => (
               <Link
                 key={view}
                 href="#"
@@ -121,6 +121,18 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
                 <BreadcrumbLink asChild>
                   <Link href="#" onClick={() => onViewChange('product')} className="text-gray-600 hover:text-gray-900">
                     Product
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </>
+          )}
+          {currentView === 'novel' && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="#" onClick={() => onViewChange('novel')} className="text-gray-600 hover:text-gray-900">
+                    Novel
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>

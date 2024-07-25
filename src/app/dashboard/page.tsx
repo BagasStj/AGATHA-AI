@@ -10,6 +10,7 @@ import { UserTable } from '../user/UserTable'
 import AIChat from '../chat/page'
 import EmailPage from '../email/page'
 import ProductDetail from '../product/[productId]/page'
+import EditorPage from '../novel/page'
 
 
 export default function Dashboard() {
@@ -21,9 +22,9 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel') => {
     setCurrentView(view);
   };
 
@@ -183,6 +184,9 @@ const handleDeleteUser = async (id: string) => {
           <AIChat />
         ) : currentView === 'product' ? (
           <ProductDetail />
+        )
+         : currentView === 'novel' ? (
+          <EditorPage />
         ) : (
           <EmailPage />
         )}

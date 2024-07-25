@@ -22,7 +22,7 @@ function EmailPageContent() {
         event.preventDefault();
         setEmailStatus('loading');
         try {
-            const response = await fetch('/api/email/send-emaill', { 
+            const response = await fetch('/api/email/send-email', { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

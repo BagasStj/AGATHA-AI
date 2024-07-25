@@ -5,9 +5,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Home, LineChart, Package, Settings, Users2, MessageSquare, Mail, DollarSign } from "lucide-react"
+import { Home, LineChart, Package, Settings, Users2, MessageSquare, Mail, DollarSign, Pencil } from "lucide-react"
 
-export function AsideComponent({ onViewChange, currentView }: { onViewChange: (view: 'users' | 'chat' | 'email' | 'product') => void, currentView: 'users' | 'chat' | 'email' | 'product' }) {
+export function AsideComponent({ onViewChange, currentView }: { onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' ) => void, currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' }) {
   return <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
     <nav className="flex flex-col items-center gap-4 px-2 sm:py-4">
       <Link
@@ -58,6 +58,19 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
           </Link>
         </TooltipTrigger>
         <TooltipContent side="right">product</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            href="#"
+            onClick={() => onViewChange('novel')}
+            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'novel' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+          >
+            <Pencil className="h-4 w-4 transition-all group-hover:scale-110" />
+            <span className="sr-only">Novel Text</span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">Novel Text</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>

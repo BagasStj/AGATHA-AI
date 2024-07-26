@@ -9,11 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ToastProvider } from "@/components/ui/toast";
 import { useToast } from "@/components/ui/use-toast";
 
-// Remove the import for Editor from "novel" as it's not exported
-// import { Editor } from "novel";
-
-// The import for Icons was already removed as per the comment
-
 function EmailPageContent() {
     const [emailStatus, setEmailStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const { toast } = useToast();
@@ -38,13 +33,16 @@ function EmailPageContent() {
                 toast({ description: 'Email sent successfully!', duration: 3000 });
                 event.currentTarget.reset();
             } else {
+                // Set status to error only if response is not ok
                 setEmailStatus('error');
                 toast({ description: 'Error sending email. Please try again.', variant: 'destructive', duration: 3000 });
             }
         } catch (error) {
+            // Handle any unexpected errors
             setEmailStatus('error');
             toast({ description: 'Error sending email. Please try again.', variant: 'destructive', duration: 3000 });
         } finally {
+            // Reset status to idle after handling the response
             setEmailStatus('idle');
         }
     };

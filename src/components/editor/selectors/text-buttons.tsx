@@ -50,20 +50,22 @@ export const TextButtons = () => {
   return (
     <div className="flex">
       {items.map((item, index) => (
-        <EditorBubbleItem
+        <Button
           key={index}
-          onSelect={(editor) => {
+          size="sm"
+          className="rounded-none"
+          variant="ghost"
+          onClick={(e) => {
+            e.preventDefault();
             item.command(editor);
           }}
         >
-          <Button size="sm" className="rounded-none" variant="ghost">
-            <item.icon
-              className={cn("h-4 w-4", {
-                "text-blue-500": item.isActive(editor),
-              })}
-            />
-          </Button>
-        </EditorBubbleItem>
+          <item.icon
+            className={cn("h-4 w-4", {
+              "text-blue-500": item.isActive(editor),
+            })}
+          />
+        </Button>
       ))}
     </div>
   );

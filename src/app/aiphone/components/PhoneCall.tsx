@@ -61,31 +61,31 @@ export default function PhoneCall() {
       setIsCallActive(true);
       setCallStatus('Calling...');
 
-      const call = await vapiClient.createCall({
-        phoneNumber: number,
-        assistant: {
-          name: "AI Assistant",
-          model: {
-            provider: "openai",
-            model: model,
-            temperature: temperature,
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: voiceId,
-          },
-          language: language,
-        },
-      });
+      // const call = await vapiClient.createCall({
+      //   phoneNumber: number,
+      //   assistant: {
+      //     name: "AI Assistant",
+      //     model: {
+      //       provider: "openai",
+      //       model: model,
+      //       temperature: temperature,
+      //     },
+      //     voice: {
+      //       provider: "11labs",
+      //       voiceId: voiceId,
+      //     },
+      //     language: language,
+      //   },
+      // });
 
-      call.on('ringing', () => setCallStatus('Ringing...'));
-      call.on('connected', () => setCallStatus('Connected'));
-      call.on('ended', () => {
-        setCallStatus('Call ended');
-        setIsCallActive(false);
-      });
+      // call.on('ringing', () => setCallStatus('Ringing...'));
+      // call.on('connected', () => setCallStatus('Connected'));
+      // call.on('ended', () => {
+      //   setCallStatus('Call ended');
+      //   setIsCallActive(false);
+      // });
 
-      setCallHistory(prev => [...prev, { number, date: new Date().toLocaleString() }]);
+      // setCallHistory(prev => [...prev, { number, date: new Date().toLocaleString() }]);
 
     } catch (error) {
       console.error('Error starting call:', error);
@@ -100,9 +100,9 @@ export default function PhoneCall() {
   }, [toast, vapiClient, temperature, voiceId, model, language]);
 
   const endCall = useCallback(() => {
-    if (vapiClient) {
-      vapiClient.endCall();
-    }
+    // if (vapiClient) {
+    //   vapiClient.endCall();
+    // }
     setIsCallActive(false);
     setCallStatus('Call ended');
   }, [vapiClient]);

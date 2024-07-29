@@ -3,8 +3,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 
 export default function FlowPage() {
   return (
-    <div className="p-4 flex items-center justify-center ">
-      <Card className="w-[90vw] h-[100vh] overflow-hidden shadow-lg">
+    <div className="p-1 flex items-center justify-center ">
+      <Card className="w-[93vw] h-[85vh] overflow-hidden shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">AI Flow Diagram</CardTitle>
           <CardDescription>
@@ -12,7 +12,7 @@ export default function FlowPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0 flex-grow">
-        <div className="w-[100%] h-[85vh] p-4 flex items-center justify-center bg-gray-100">
+        <div className="w-[100%] h-[70vh] p-4 flex items-center justify-center bg-gray-100">
       <Card className="w-full h-full overflow-hidden">
         <FlowComponent />
       </Card>

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+'use client'
+
+import React, { useEffect, useState } from 'react';
 import Link from "next/link"
 import { UserButton, SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button"
@@ -42,6 +44,11 @@ interface HeaderComponentProps {
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => {
     onViewChange(view);
@@ -174,57 +181,18 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
         />
       </div>
       <div>
-        <SignedIn>
-          <UserButton afterSignOutUrl="/" />
-        </SignedIn>
-        <SignedOut>
-          <SignInButton />
-        </SignedOut>
+        {isClient && (
+          <>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
+          </>
+        )}
       </div>
-      {/* <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-          >
-            <User className="h-5 w-5" />
-            <span className="sr-only">User menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>{currentUser?.user.firstName || 'My Account'}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            <span>Messages</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                Logout
-              </DropdownMenuItem>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action will end your current session.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onLogout}>Logout</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </DropdownMenuContent>
-      </DropdownMenu> */}
+      
     </header>
   )
 }

@@ -11,6 +11,8 @@ import AIChat from '../chat/page'
 import EmailPage from '../email/page'
 import ProductDetail from '../product/[productId]/page'
 import EditorPage from '../novel/page'
+import FlowPage from '../flow/page'
+import AIPhonePage from '../aiphone/page'
 
 
 export default function Dashboard() {
@@ -22,9 +24,9 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => {
     setCurrentView(view);
   };
 
@@ -158,42 +160,49 @@ const handleDeleteUser = async (id: string) => {
 
   return (
     <TooltipProvider>
-    <div className="flex min-h-screen w-full flex-col bg-muted/40">
-      <AsideComponent onViewChange={handleViewChange} currentView={currentView} />
-      <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-        <HeaderComponent 
-          currentUser={currentUser} 
-          onLogout={handleLogout} 
-          currentView={currentView as 'users' | 'chat' | 'email'}  
-          onViewChange={handleViewChange} 
-        />
-        {currentView === 'users' ? (
-          <DashboardUserComponent 
-            userCount={userCount} 
-            weeklyUserCount={weeklyUserCount} 
-            totalUserCount={totalUserCount} 
-            UserTable={UserTable} 
-            users={users} 
-            isToday={isToday} 
-            isThisWeek={isThisWeek}
-            onUpdateUser={handleUpdateUser}
-            onDeleteUser={handleDeleteUser}
-            onAddUser={handleAddUser}
+      <div className="flex min-h-screen w-full flex-col bg-muted/40">
+        <div className="fixed top-0 left-11 right-0 z-10">
+          <HeaderComponent 
+            currentUser={currentUser} 
+            onLogout={handleLogout} 
+            currentView={currentView as 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone'}  
+            onViewChange={handleViewChange} 
           />
-        ) : currentView === 'chat' ? (
-          <AIChat />
-        ) : currentView === 'product' ? (
-          <ProductDetail />
-        )
-         : currentView === 'novel' ? (
-          <EditorPage />
-        ) : (
-          <EmailPage />
-        )}
+        </div>
+        <div className="flex flex-1 pt-16">
+          <div className="fixed left-0 top-16 bottom-0 z-10">
+            <AsideComponent onViewChange={handleViewChange} currentView={currentView} />
+          </div>
+          <main className="flex-1 ml-14 p-4">
+            {currentView === 'users' ? (
+              <DashboardUserComponent 
+                userCount={userCount} 
+                weeklyUserCount={weeklyUserCount} 
+                totalUserCount={totalUserCount} 
+                UserTable={UserTable} 
+                users={users} 
+                isToday={isToday} 
+                isThisWeek={isThisWeek}
+                onUpdateUser={handleUpdateUser}
+                onDeleteUser={handleDeleteUser}
+                onAddUser={handleAddUser}
+              />
+            ) : currentView === 'chat' ? (
+              <AIChat />
+            ) : currentView === 'product' ? (
+              <ProductDetail />
+            ) : currentView === 'flow' ? (
+              <FlowPage />
+            ) : currentView === 'aiphone' ? (
+              <AIPhonePage />
+            ) : currentView === 'novel' ? (
+              <EditorPage />
+            ) : (
+              <EmailPage />
+            )}
+          </main>
+        </div>
       </div>
-    </div>
-  </TooltipProvider>
+    </TooltipProvider>
   )
 }
-
-

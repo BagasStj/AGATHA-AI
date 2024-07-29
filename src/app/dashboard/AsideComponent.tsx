@@ -5,9 +5,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Home, LineChart, Package, Settings, Users2, MessageSquare, Mail, DollarSign, Pencil } from "lucide-react"
+import { Home, LineChart, Package, Settings, Users2, MessageSquare, Mail, DollarSign, Pencil, Workflow, Phone } from "lucide-react"
 
-export function AsideComponent({ onViewChange, currentView }: { onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' ) => void, currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' }) {
+export function AsideComponent({ onViewChange, currentView }: { onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => void, currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' }) {
   return <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
     <nav className="flex flex-col items-center gap-4 px-2 sm:py-4">
       <Link
@@ -76,13 +76,27 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
         <TooltipTrigger asChild>
           <Link
             href="#"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+            onClick={() => onViewChange('flow')}
+            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'flow' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
           >
-            <Package className="h-5 w-5" />
-            <span className="sr-only">Products</span>
+            <Workflow className="h-4 w-4 transition-all group-hover:scale-110" />
+            <span className="sr-only">Flow</span>
           </Link>
         </TooltipTrigger>
-        <TooltipContent side="right">Products</TooltipContent>
+        <TooltipContent side="right">Flow</TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            href="#"
+            onClick={() => onViewChange('aiphone')}
+            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'aiphone' ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+          >
+            <Phone className="h-4 w-4 transition-all group-hover:scale-110" />
+            <span className="sr-only">AI Phone</span>
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right">AI Phone</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>

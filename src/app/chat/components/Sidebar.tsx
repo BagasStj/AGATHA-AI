@@ -387,7 +387,7 @@ export default function Sidebar({
 
     return (
         <>
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+        <aside className={`fixed inset-y-0 left-0 z-0 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
             <header className="border-b border-gray-200 p-4 flex justify-between items-center">
                 <Button onClick={onClose} variant="ghost" className="md:hidden">
                     <XIcon className="h-5 w-5" />

@@ -20,12 +20,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body>
-          <ThemeProvider
-
-          >
+          {/* <ThemeProvider > */}
             {children}
             <Toaster />
-          </ThemeProvider>
+          {/* </ThemeProvider> */}
 
         </body>
       </html>

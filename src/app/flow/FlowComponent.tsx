@@ -1,14 +1,17 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { ReactFlow, MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, Node, Edge, Connection, NodeTypes, EdgeTypes, BackgroundVariant, applyNodeChanges, applyEdgeChanges, useReactFlow, Viewport, ReactFlowProvider } from '@xyflow/react';
+import { ReactFlow, MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, Node, Edge, Connection, NodeTypes, EdgeTypes, BackgroundVariant, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import NodeInfoCard from './components/NodeInfoCard';
 import CustomNode from './components/CustomNode';
 import CustomEdge from './components/CustomEdge';
 import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
+import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
 
 interface NodeData {
   label: string;
@@ -43,6 +46,8 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [currentFlowId, setCurrentFlowId] = useState<string | null>(null);
+  const [showChatDialog, setShowChatDialog] = useState(false);
   const { getNodes, getViewport } = useReactFlow();
   const { toast } = useToast();
 
@@ -59,6 +64,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
       const flow = await response.json();
       setNodes(flow.nodes);
       setEdges(flow.edges);
+      setCurrentFlowId(flowId); // Added this line to set currentFlowId
       toast({
         title: "Success",
         description: `Flow "${flow.name}" loaded successfully`,
@@ -115,7 +121,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
     );
   }, [setNodes]);
 
-  const onAddNode = useCallback(() => {
+  const onAddNode = useCallback((nodeType: string) => {
     const existingNodes = getNodes();
     const { zoom } = getViewport();
 
@@ -135,8 +141,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
       type: 'custom',
       position: newPosition,
       data: {
-        label: existingNodes.length === 0 ? 'Start' : `Node ${existingNodes.length + 1}`,
-        onUpdateLabel
+        label: existingNodes.length === 0 ? 'Start' : `${nodeType} ${existingNodes.length + 1}`,
+        onUpdateLabel,
+        nodeType: nodeType
       },
       selected: false,
     };
@@ -148,7 +155,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
     setEdges((eds) => eds.filter((edge) => edge.source !== nodeId && edge.target !== nodeId));
   }, [setNodes, setEdges]);
 
-  const onSave = useCallback(async () => {
+  const onSaveAs = useCallback(async () => {
     try {
       const flowName = prompt("Enter a name for this flow:");
       if (!flowName) return;
@@ -166,6 +173,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
       }
   
       const savedFlow = await response.json();
+      setCurrentFlowId(savedFlow.id);
       toast({
         title: "Success",
         description: `Flow "${flowName}" saved`,
@@ -173,7 +181,6 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
         className: "bg-green-100 border-green-400 text-green-700",
       });
   
-      // Call the onFlowSaved prop with the saved flow data
       onFlowSaved(savedFlow);
     } catch (error) {
       console.error('Error saving flow:', error);
@@ -185,7 +192,47 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
     }
   }, [nodes, edges, toast, onFlowSaved]);
 
+  const onSave = useCallback(async () => {
+    if (!currentFlowId) {
+      onSaveAs();
+      return;
+    }
+  
+    try {
+      const response = await fetch(`/api/flows/${currentFlowId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ nodes, edges }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update flow');
+      }
+  
+      const updatedFlow = await response.json();
+      toast({
+        title: "Success",
+        description: `Flow updated successfully`,
+        duration: 3000,
+        className: "bg-green-100 border-green-400 text-green-700",
+      });
+  
+      onFlowSaved(updatedFlow);
+    } catch (error) {
+      console.error('Error updating flow:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update flow. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [currentFlowId, nodes, edges, toast, onFlowSaved, onSaveAs]);
 
+  const onPublish = useCallback(() => {
+    setShowChatDialog(true);
+  }, []);
 
   const onNodeDragStop = useCallback(
     (event: React.MouseEvent, node: Node, nodes: Node[]) => {
@@ -205,12 +252,33 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
 
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col relative">
       <div className="flex justify-between p-4">
         <div>
-          <button onClick={onAddNode} className="px-4 py-2 bg-blue-500 text-white rounded mr-2">Add Node</button>
-          <button onClick={() => onRemoveNode(selectedNode?.id ?? '')} className="px-4 py-2 bg-red-500 text-white rounded  mr-2">Remove Node</button>
-          <button onClick={onSave} className="px-4 py-2 bg-green-500 text-white rounded ">Save Flow</button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" className="bg-blue-500 text-white hover:bg-blue-600">
+                Add Node <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onSelect={() => onAddNode('Start')}>Start</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onAddNode('LLM Antonim')}>LLM Antonim</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onAddNode('Output')}>Output Node</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button onClick={() => onRemoveNode(selectedNode?.id ?? '')} variant="destructive" className="ml-2">
+            Remove Node
+          </Button>
+          <Button onClick={onSave} variant="default" className="ml-2 bg-green-500 text-white hover:bg-green-600">
+            Save
+          </Button>
+          <Button onClick={onSaveAs} variant="default" className="ml-2 bg-green-500 text-white hover:bg-green-600">
+            Save As
+          </Button>
+          <Button onClick={onPublish} variant="default" className="ml-2 bg-purple-500 text-white hover:bg-purple-600">
+            Publish
+          </Button>
         </div>
       </div>
       <ReactFlow
@@ -238,6 +306,14 @@ function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string
         onClose={closeNodeInfo}
         onUpdateNode={onUpdateNode}
       />
+      {showChatDialog && (
+        <ChatDialog
+          onClose={() => setShowChatDialog(false)}
+          selectedNode={selectedNode}
+          nodes={nodes}
+          edges={edges}
+        />
+      )}
       <Toaster />
     </div>
   );

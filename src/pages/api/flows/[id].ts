@@ -21,6 +21,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             console.error('Error loading flow:', error);
             res.status(500).json({ message: 'Error loading flow' });
         }
+    } else if (req.method === 'PUT') {
+        try {
+            const { id } = req.query;
+            const { nodes, edges } = req.body;
+            const updatedFlow = await prisma.flow.update({
+                where: { id: String(id) },
+                data: {
+                    nodes: JSON.stringify(nodes),
+                    edges: JSON.stringify(edges),
+                },
+            });
+            res.status(200).json(updatedFlow);
+        } catch (error) {
+            console.error('Error updating flow:', error);
+            res.status(500).json({ message: 'Error updating flow' });
+        }
     } else if (req.method === 'DELETE') {
         try {
             const { id } = req.query;

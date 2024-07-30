@@ -13,6 +13,7 @@ import ProductDetail from '../product/[productId]/page'
 import EditorPage from '../novel/page'
 import FlowPage from '../flow/page'
 import AIPhonePage from '../aiphone/page'
+import ChatPageFlowise from '../chat-flowise/page'
 
 
 export default function Dashboard() {
@@ -24,9 +25,9 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise') => {
     setCurrentView(view);
   };
 
@@ -165,7 +166,7 @@ const handleDeleteUser = async (id: string) => {
           <HeaderComponent 
             currentUser={currentUser} 
             onLogout={handleLogout} 
-            currentView={currentView as 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone'}  
+            currentView={currentView as 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise'}  
             onViewChange={handleViewChange} 
           />
         </div>
@@ -191,6 +192,8 @@ const handleDeleteUser = async (id: string) => {
               <AIChat />
             ) : currentView === 'product' ? (
               <ProductDetail />
+            ) : currentView === 'chat-flowise' ? (
+              <ChatPageFlowise />
             ) : currentView === 'flow' ? (
               <FlowPage />
             ) : currentView === 'aiphone' ? (

@@ -38,8 +38,8 @@ import { Home, MessageSquare, PanelLeft, Search, User, Users2, X } from "lucide-
 interface HeaderComponentProps {
   currentUser: any;
   onLogout: () => void;
-  currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone';
-  onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => void;
+  currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise';
+  onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise') => void;
 }
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
@@ -104,6 +104,18 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
                 <BreadcrumbLink asChild>
                   <Link href="#" onClick={() => onViewChange('chat')} className="text-gray-600 hover:text-gray-900">
                     Chat
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </>
+          )}
+          {currentView === 'chat-flowise' && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="#" onClick={() => onViewChange('chat-flowise')} className="text-gray-600 hover:text-gray-900">
+                    Chat Flowise
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>

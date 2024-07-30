@@ -2,7 +2,24 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'POST') {
+  if (req.method === 'GET') {
+    try {
+      const flows = await prisma.flow.findMany({
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+      res.status(200).json(flows);
+    } catch (error) {
+      console.error('Error fetching flows:', error);
+      res.status(500).json({ message: 'Error fetching flows' });
+    }
+  } else if (req.method === 'POST') {
     try {
       const { name, nodes, edges } = req.body;
       const flow = await prisma.flow.create({
@@ -22,7 +39,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
   } else {
-    res.setHeader('Allow', ['POST']);
+    res.setHeader('Allow', ['GET', 'POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

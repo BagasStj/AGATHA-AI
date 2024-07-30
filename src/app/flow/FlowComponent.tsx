@@ -31,15 +31,15 @@ const initialEdges: Edge[] = [
 ];
 
 
-export default function FlowComponentWrapper() {
+export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void }) {
   return (
     <ReactFlowProvider>
-      <FlowComponent />
+      <FlowComponent selectedFlowId={selectedFlowId} onFlowSaved={onFlowSaved} />
     </ReactFlowProvider>
   );
 }
 
-function FlowComponent() {
+function FlowComponent({ selectedFlowId, onFlowSaved }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -50,6 +50,38 @@ function FlowComponent() {
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
     [setEdges]
   );
+  const loadFlow = useCallback(async (flowId: string) => {
+    try {
+      const response = await fetch(`/api/flows/${flowId}`);
+      if (!response.ok) {
+        throw new Error('Failed to load flow');
+      }
+      const flow = await response.json();
+      setNodes(flow.nodes);
+      setEdges(flow.edges);
+      toast({
+        title: "Success",
+        description: `Flow "${flow.name}" loaded successfully`,
+        className: "bg-green-100 border-green-400 text-green-700",
+
+      });
+    } catch (error) {
+      console.error('Error loading flow:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load flow. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [setNodes, setEdges, toast]);
+  useEffect(() => {
+    if (selectedFlowId) {
+      loadFlow(selectedFlowId);
+    }
+  }, [selectedFlowId, loadFlow]);
+
+
+
   const onUpdateNode = useCallback((id: string, data: Partial<NodeData>) => {
     setNodes((nds) =>
       nds.map((node) => {
@@ -120,7 +152,7 @@ function FlowComponent() {
     try {
       const flowName = prompt("Enter a name for this flow:");
       if (!flowName) return;
-
+  
       const response = await fetch('/api/flows', {
         method: 'POST',
         headers: {
@@ -128,16 +160,21 @@ function FlowComponent() {
         },
         body: JSON.stringify({ name: flowName, nodes, edges }),
       });
-
+  
       if (!response.ok) {
         throw new Error('Failed to save flow');
       }
-
+  
       const savedFlow = await response.json();
       toast({
         title: "Success",
-        description: `Flow "${flowName}" saved with ID: ${savedFlow.id}`,
+        description: `Flow "${flowName}" saved`,
+        duration: 3000,
+        className: "bg-green-100 border-green-400 text-green-700",
       });
+  
+      // Call the onFlowSaved prop with the saved flow data
+      onFlowSaved(savedFlow);
     } catch (error) {
       console.error('Error saving flow:', error);
       toast({
@@ -146,30 +183,9 @@ function FlowComponent() {
         variant: "destructive",
       });
     }
-  }, [nodes, edges, toast]);
+  }, [nodes, edges, toast, onFlowSaved]);
 
-  const loadFlow = useCallback(async (flowId: string) => {
-    try {
-      const response = await fetch(`/api/flows/${flowId}`);
-      if (!response.ok) {
-        throw new Error('Failed to load flow');
-      }
-      const flow = await response.json();
-      setNodes(flow.nodes);
-      setEdges(flow.edges);
-      toast({
-        title: "Success",
-        description: `Flow "${flow.name}" loaded successfully`,
-      });
-    } catch (error) {
-      console.error('Error loading flow:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load flow. Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [setNodes, setEdges, toast]);
+
 
   const onNodeDragStop = useCallback(
     (event: React.MouseEvent, node: Node, nodes: Node[]) => {
@@ -186,11 +202,7 @@ function FlowComponent() {
     []
   );
 
-  // useEffect(() => {
-  //   return () => {
-  //     prisma.$disconnect();
-  //   };
-  // }, []);
+
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -199,7 +211,6 @@ function FlowComponent() {
           <button onClick={onAddNode} className="px-4 py-2 bg-blue-500 text-white rounded mr-2">Add Node</button>
           <button onClick={() => onRemoveNode(selectedNode?.id ?? '')} className="px-4 py-2 bg-red-500 text-white rounded  mr-2">Remove Node</button>
           <button onClick={onSave} className="px-4 py-2 bg-green-500 text-white rounded ">Save Flow</button>
-          <button onClick={() => loadFlow('your-flow-id')} className="px-4 py-2 bg-purple-500 text-white rounded mr-2">Load Flow</button>
         </div>
       </div>
       <ReactFlow

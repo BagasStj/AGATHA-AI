@@ -75,7 +75,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   };
 
   return (
-    <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 flex flex-col max-h-[calc(100vh-6rem)]">
+    <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 h-[70vh] flex flex-col max-h-[calc(100vh-6rem)]">
       <div className="p-6 pb-4">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
           <X className="w-6 h-6" />

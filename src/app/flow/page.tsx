@@ -60,6 +60,9 @@ export default function FlowPage() {
       });
       if (response.ok) {
         setFlows(flows.filter(flow => flow.id !== id));
+        if (selectedFlow === id) {
+          setSelectedFlow(null);
+        }
       } else {
         console.error('Failed to delete flow');
       }
@@ -67,16 +70,6 @@ export default function FlowPage() {
       console.error('Error deleting flow:', error);
     }
   };
-
-  const filteredFlows = flows.filter(flow =>
-    flow.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const onFlowSaved = useCallback((savedFlow: any) => {
-    setFlows((prevFlows) => [...prevFlows, savedFlow]);
-    fetchFlows(); // Re-fetch all flows after saving
-  }, []);
-  
   const fetchFlows = useCallback(async () => {
     try {
       const response = await fetch('/api/flows');
@@ -89,6 +82,20 @@ export default function FlowPage() {
       console.error('Error fetching flows:', error);
     }
   }, []);
+
+  const filteredFlows = flows.filter(flow =>
+    flow.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  const onFlowSaved = useCallback((savedFlow: any) => {
+    if (savedFlow === null) {
+      setSelectedFlow(null);
+    } else {
+      setFlows((prevFlows) => [...prevFlows, savedFlow]);
+      fetchFlows(); // Re-fetch all flows after saving
+    }
+  }, [fetchFlows]);
+
+  
 
 
   return (
@@ -124,7 +131,7 @@ export default function FlowPage() {
                   <DropdownMenuContent>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e:any) => e.preventDefault()}>
+                        <DropdownMenuItem onSelect={(e: any) => e.preventDefault()}>
                           Delete
                         </DropdownMenuItem>
                       </AlertDialogTrigger>
@@ -151,11 +158,16 @@ export default function FlowPage() {
           </div>
         </CardContent>
       </Card>
-      <Card className="flex-1 overflow-hidden shadow-lg">
-        <CardContent className="p-0 h-full">
-          <FlowComponent selectedFlowId={selectedFlow} onFlowSaved={onFlowSaved}/>
-        </CardContent>
-      </Card>
+      <div className="flex-1 overflow-hidden shadow-lg">
+        <div className="p-0 h-full">
+          <FlowComponent selectedFlowId={selectedFlow} onFlowSaved={onFlowSaved}
+            onFlowDeleted={() => {
+              if (selectedFlow) {
+                deleteFlow(selectedFlow);
+              }
+            }} />
+        </div>
+      </div>
     </div>
   );
 }

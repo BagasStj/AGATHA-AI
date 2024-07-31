@@ -92,76 +92,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                         </SelectContent>
                     </Select>
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Temperature: {temperature.toFixed(2)}
-                    </label>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={temperature}
-                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                        className="w-full accent-gray-700"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Top P: {topP.toFixed(2)}
-                    </label>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.01"
-                        value={topP}
-                        onChange={(e) => setTopP(parseFloat(e.target.value))}
-                        className="w-full accent-gray-700"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Presence Penalty: {presencePenalty.toFixed(2)}
-                    </label>
-                    <input
-                        type="range"
-                        min="0"
-                        max="2"
-                        step="0.01"
-                        value={presencePenalty}
-                        onChange={(e) => setPresencePenalty(parseFloat(e.target.value))}
-                        className="w-full accent-gray-700"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Frequency Penalty: {frequencyPenalty.toFixed(2)}
-                    </label>
-                    <input
-                        type="range"
-                        min="0"
-                        max="2"
-                        step="0.01"
-                        value={frequencyPenalty}
-                        onChange={(e) => setFrequencyPenalty(parseFloat(e.target.value))}
-                        className="w-full accent-gray-700"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Max Tokens: {maxTokens}
-                    </label>
-                    <input
-                        type="range"
-                        min="1"
-                        max="4096"
-                        step="1"
-                        value={maxTokens}
-                        onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-                        className="w-full accent-gray-700"
-                    />
-                </div>
+                
             </div>
             <div className="p-6 pt-4 border-t border-gray-200">
                 <button

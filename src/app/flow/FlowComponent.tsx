@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { ReactFlow, MiniMap, Controls, Background, useNodesState, useEdgesState, addEdge, Node, Edge, Connection, NodeTypes, EdgeTypes, BackgroundVariant, useReactFlow, ReactFlowProvider } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import NodeInfoCard from './components/NodeInfoCard';
+import NodeInfoCardVapi from './components/NodeInfoCardVapi';
 import CustomNode from './components/CustomNode';
 import CustomEdge from './components/CustomEdge';
 import { useToast } from "@/components/ui/use-toast";
@@ -14,9 +15,11 @@ import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen
 import { FileText, Play, Plus, Save, SaveAll, Trash2 } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
+import VapiClient from '@vapi-ai/web';
 
 interface NodeData {
   label: string;
+  setVapi: any;
   onUpdateLabel: (id: string, label: string) => void;
 }
 
@@ -27,6 +30,10 @@ const nodeTypes: NodeTypes = {
 const edgeTypes: EdgeTypes = {
   custom: CustomEdge,
 };
+
+
+const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+
 
 const initialNodes: Node[] = [];
 
@@ -54,6 +61,27 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const [lastEditTime, setLastEditTime] = useState<Date | null>(null);
   const { getNodes, getViewport } = useReactFlow();
   const { toast } = useToast();
+  const [defaultCall, setDefaultCall] = useState<any>({
+    firstMessage: "Hai beb, can I help you today?",
+    model: {
+      provider: "openai",
+      model: "gpt-3.5-turbo",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "assistant",
+          content: "You are an assistant.",//system prompt
+        },
+      ],
+      maxTokens: 5,
+    },
+    voice: {
+      provider: "11labs",
+      voiceId: "burt",
+    },
+  });
+  const [vapiClient, setVapiClient] = useState<VapiClient | null>(null);
+
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -90,6 +118,10 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
 
   useEffect(() => {
+    if (VAPI_API_KEY) {
+      const client = new VapiClient(VAPI_API_KEY);
+      setVapiClient(client);
+    }
     if (selectedFlowId) {
       loadFlow(selectedFlowId);
     }
@@ -112,6 +144,20 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         return node;
       })
     );
+  }, [setNodes]);
+
+  const onUpdateNodevapi = useCallback((id: string, data: Partial<NodeData>) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === id) {
+          return { ...node, data: { ...node.data, ...data } };
+        }
+        return node;
+      })
+    );
+    if (data.setVapi) {
+      setDefaultCall(data.setVapi);
+    }
   }, [setNodes]);
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
@@ -156,7 +202,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
       type: 'custom',
       position: newPosition,
       data: {
-        label:  `${nodeType} ${existingNodes.length + 1}`,
+        label: `${nodeType}`,
         onUpdateLabel,
         nodeType: nodeType
       },
@@ -252,9 +298,57 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   }, [currentFlowId, nodes, edges, toast, onFlowSaved, onSaveAs]);
 
 
-  const onPublish = useCallback(() => {
-    setShowChatDialog(true);
-  }, []);
+  const onPublish = useCallback(async () => {
+    const vapiNode: any = nodes.find(node => node.data.nodeType === 'vapi');
+    if (vapiNode) {
+      console.log('GET PARAMS', defaultCall)
+
+      if (!vapiClient) {
+        toast({
+          title: "Error",
+          description: "Vapi client is not initialized.",
+          duration: 3000,
+          variant: "destructive",
+        });
+        return;
+      }
+      try {
+        // error vapi client api key limit 10 per mhoont
+        const call = await vapiClient.start({
+          model: {
+            provider: defaultCall.model.provider,
+            model: defaultCall.model.model,
+            temperature: defaultCall.model.temperature,
+            messages: [
+              {
+                role: defaultCall.model.messages[0].role,
+                content: defaultCall.model.messages[0].content,
+              },
+            ],
+          },
+          voice: {
+            provider: "11labs",
+            voiceId: defaultCall.voice.voiceId,
+          },
+
+        });
+        vapiClient.on('call-start', () => toast({ title: "Call Status", description: "Ringing..." }));
+        vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" }));
+        vapiClient.on('call-end', () => toast({ title: "Call Status", description: "Call ended" }));
+
+        // setShowChatDialog(true);
+      } catch (error) {
+        console.error('Error starting VAPI call:', error);
+        toast({
+          title: "Error",
+          description: "Failed to start the VAPI call. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      setShowChatDialog(true);
+    }
+  }, [nodes, vapiClient, toast]);
   const onCreateNewFlow = useCallback(() => {
     setNodes([]);
     setEdges([]);
@@ -280,6 +374,14 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   );
 
 
+  const nodeTypeList = [
+    { type: 'Start', label: 'Start' },
+    { type: 'LLM Antonim', label: 'LLM Antonim' },
+    { type: 'Output', label: 'Output' },
+    { type: 'vapi', label: 'Vapi' },
+    { type: 'LLM Chat', label: 'LLM Chat' },
+    // Add more node types here as needed
+  ];
 
 
   return (
@@ -309,7 +411,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               </Button> */}
               <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-blue-500 hover:bg-blue-400 text-white">
                 <Play className="h-5 w-5 mr-2" />
-                Publish
+                Run
               </Button>
             </div>
           </div>
@@ -326,9 +428,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="z-[999999]">
-                <DropdownMenuItem onSelect={() => onAddNode('Start')}>Start</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onAddNode('LLM Antonim')}>LLM Antonim</DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onAddNode('Output')}>Output Node</DropdownMenuItem>
+                {nodeTypeList.map((nodeType) => (
+                  <DropdownMenuItem key={nodeType.type} onSelect={() => onAddNode(nodeType.type)}>
+                    {nodeType.label}
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
             {selectedNode && (
@@ -360,7 +464,13 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <MiniMap />
               <Background variant={BackgroundVariant.Lines} gap={12} size={1} />
             </ReactFlow>
-            {selectedNode && (
+            {selectedNode && selectedNode.data.nodeType === 'vapi' ? (
+              <NodeInfoCardVapi
+                node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                onClose={closeNodeInfo}
+                onUpdateNode={onUpdateNodevapi}
+              />
+            ) : selectedNode && (
               <NodeInfoCard
                 node={selectedNode as Node<NodeData & Record<string, unknown>>}
                 onClose={closeNodeInfo}

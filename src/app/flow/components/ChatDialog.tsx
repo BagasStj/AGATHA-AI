@@ -30,7 +30,35 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
+          question: input,
+          nodes: nodes,
+          edges: edges,
+          selectedNodeId: selectedNode?.id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching chat response:', error);
+      return null;
+    }
+  };
+
+  const fetchChatResponseChat = async (input: string) => {
+    try {
+      const response = await fetch('/api/chat-general-flowise', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           question: input,
           nodes: nodes,
           edges: edges,
@@ -56,7 +84,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       const userMessage = { role: 'user' as const, content: input };
       setMessages(prevMessages => [...prevMessages, userMessage]);
 
-    //   if (selectedNode?.type === 'LLM Antonim') {
+      if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
         const response = await fetchChatResponse(input);
         if (response) {
           const assistantMessage = {
@@ -65,10 +93,19 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
           };
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }
-    //   } else {
-    //     // Handle other node types or default behavior
-    //     setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
-    //   }
+      } else if (nodes.find(node => node.data.nodeType === 'LLM Chat')) {
+        const response = await fetchChatResponseChat(input);
+        if (response) {
+          const assistantMessage = {
+            role: 'ai' as const,
+            content: response.content,
+          };
+          setMessages(prevMessages => [...prevMessages, assistantMessage]);
+        }
+      } else {
+        // Handle other node types or default behavior
+        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
+      }
 
       setInput('');
     }
@@ -82,20 +119,19 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         </button>
         <h3 className="text-xl font-bold mb-6 text-gray-800">Chat AI Flowise</h3>
       </div>
-      
+
       <ScrollArea className="px-6 pb-4 space-y-4 overflow-y-auto flex-grow">
         {messages.map((msg, index) => (
           <div key={index} className={`mb-4 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-            <div className={`inline-block p-3 rounded-lg ${
-              msg.role === 'user' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
-            }`}>
+            <div className={`inline-block p-3 rounded-lg ${msg.role === 'user' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
+              }`}>
               {msg.content}
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </ScrollArea>
-      
+
       <div className="p-6 pt-4 border-t border-gray-200">
         <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-center">
           <Input

@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
-import { PhoneIcon, MicIcon, PhoneOffIcon, Settings } from 'lucide-react';
+import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone } from 'lucide-react';
 import VapiClient from '@vapi-ai/web';
 
-const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_API_KEY;
+const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 
 export default function PhoneCall() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -28,7 +28,29 @@ export default function PhoneCall() {
     { number: "+5544332211", date: "2023-05-04 09:00", duration: "2m 56s" },
     { number: "+6677889900", date: "2023-05-05 13:20", duration: "6m 39s" },
   ]);
+  const [activeCall, setActiveCall] = useState<any>(null);
+  const [defaultCall, setDefaultCall] = useState<any>({
+    firstMessage: "Hai beb, can I help you today?",
+    model: {
+      provider: "openai",
+      model: "gpt-3.5-turbo",
+      temperature: 0.7,
+      messages: [
+        {
+          role: "assistant",
+          content: "You are an assistant.",//system prompt
+        },
+      ],
+      maxTokens: 5,
+    },
+    voice: {
+      provider: "11labs",
+      voiceId: "burt",
+    },
+  });
 
+
+  // In the useEffect hook
   useEffect(() => {
     if (VAPI_API_KEY) {
       const client = new VapiClient(VAPI_API_KEY);
@@ -36,16 +58,8 @@ export default function PhoneCall() {
     }
   }, []);
 
-  const startCall = useCallback(async (number: string) => {
-    if (!number) {
-      toast({
-        title: "Error",
-        description: "Please enter a phone number.",
-        duration: 3000,
-        variant: "destructive",
-      });
-      return;
-    }
+
+  const startCall = useCallback(async () => {
 
     if (!vapiClient) {
       toast({
@@ -60,32 +74,35 @@ export default function PhoneCall() {
     try {
       setIsCallActive(true);
       setCallStatus('Calling...');
+      console.log('GET PARAMS', defaultCall)
+      const call = await vapiClient.start({
+        model: {
+          provider: defaultCall.model.provider,
+          model: defaultCall.model.model,
+          temperature: defaultCall.model.temperature,
+          messages: [
+            {
+              role: defaultCall.model.messages[0].role,
+              content: defaultCall.model.messages[0].content,
+            },
+          ],
+        },
+        voice: {
+          provider: "11labs",
+          voiceId: defaultCall.voice.voiceId,
+        },
 
-      // const call = await vapiClient.createCall({
-      //   phoneNumber: number,
-      //   assistant: {
-      //     name: "AI Assistant",
-      //     model: {
-      //       provider: "openai",
-      //       model: model,
-      //       temperature: temperature,
-      //     },
-      //     voice: {
-      //       provider: "11labs",
-      //       voiceId: voiceId,
-      //     },
-      //     language: language,
-      //   },
-      // });
+      });
+      setActiveCall(call);
 
-      // call.on('ringing', () => setCallStatus('Ringing...'));
-      // call.on('connected', () => setCallStatus('Connected'));
-      // call.on('ended', () => {
-      //   setCallStatus('Call ended');
-      //   setIsCallActive(false);
-      // });
+      vapiClient.on('call-start', () => setCallStatus('Ringing...'));
+      vapiClient.on('speech-start', () => setCallStatus('Connected'));
+      vapiClient.on('call-end', () => {
+        setCallStatus('Call ended');
+        setIsCallActive(false);
+      });
 
-      // setCallHistory(prev => [...prev, { number, date: new Date().toLocaleString() }]);
+      setCallHistory(prev => [...prev, { number: phoneNumber, date: new Date().toLocaleString(), duration: '0:00' }]);
 
     } catch (error) {
       console.error('Error starting call:', error);
@@ -97,114 +114,178 @@ export default function PhoneCall() {
       });
       setIsCallActive(false);
     }
-  }, [toast, vapiClient, temperature, voiceId, model, language]);
+  }, [toast, vapiClient, temperature, voiceId, model, language, phoneNumber]);
 
   const endCall = useCallback(() => {
-    // if (vapiClient) {
-    //   vapiClient.endCall();
+    if (vapiClient) {
+      vapiClient.stop();
+    }
+    // if (activeCall) {
+    //   activeCall.hangUp();
     // }
+    setActiveCall(null);
     setIsCallActive(false);
     setCallStatus('Call ended');
-  }, [vapiClient]);
+  }, [vapiClient, activeCall]);
 
   return (
-    <div className="flex justify-center items-start space-x-8 p-8">
+    <div className="flex justify-center items-start space-x-8 p-2">
       {/* Left Card: AI Phone Settings */}
-      <div className="bg-white rounded-lg shadow-lg p-6 w-1/2">
-        <h2 className="text-2xl font-bold mb-4 flex items-center">
-          <Settings className="mr-2" /> AI Phone Settings
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Temperature</label>
-            <Slider
-              value={[temperature]}
-              onValueChange={(value) => setTemperature(value[0])}
-              max={1}
-              step={0.1}
-              className="mt-2"
-            />
-            <span className="text-sm text-gray-500">{temperature}</span>
+      <div className="bg-white rounded-lg shadow-lg p-6 w-full">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold flex items-center">
+            <Phone className="mr-2" /> AI Phone Settings
+          </h2>
+          <Button
+            onClick={isCallActive ? endCall : () => startCall()}
+            className={`${isCallActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white w-[14vw]`}
+          >
+            {isCallActive ? (
+              <>
+                <PhoneOffIcon className="mr-2 h-4 w-4" /> Disconnect
+              </>
+            ) : (
+              <>
+                <PhoneIcon className="mr-2 h-4 w-4" /> Call
+              </>
+            )}
+          </Button>
+        </div>
+        <div className='flex'>
+          <div className="w-[64vw] mr-[1vw]">
+            <div className="mb-4">
+              <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
+                First Message
+              </label>
+              <input
+                value={defaultCall.firstMessage}
+                onChange={(e) => setDefaultCall({ ...defaultCall, firstMessage: e.target.value })}
+                type="text"
+                id="firstMessage"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter the first message"
+                disabled={isCallActive}
+              />
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700 mb-1">
+                System Prompt
+              </label>
+              <textarea
+                value={defaultCall.model.messages[0].content}
+                onChange={(e) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, messages: [{ ...defaultCall.model.messages[0], content: e.target.value }] } })}
+                id="systemPrompt"
+                rows={4}
+                className="w-full px-3 h-[50vh] max-h-[50vh] py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Enter the system prompt"
+                disabled={isCallActive}
+              ></textarea>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Voice ID</label>
-            <Input
-              value={voiceId}
-              onChange={(e) => setVoiceId(e.target.value)}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Model</label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                <SelectItem value="gpt-4">GPT-4</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Language</label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en-US">English (US)</SelectItem>
-                <SelectItem value="es-ES">Spanish (Spain)</SelectItem>
-                <SelectItem value="fr-FR">French (France)</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="w-[15vw]">
+            <div className="mb-4">
+              <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-1">
+                Voice
+              </label>
+              <Select value={defaultCall.voice.voiceId} onValueChange={(value) => setDefaultCall({ ...defaultCall, voice: { ...defaultCall.voice, voiceId: value } })} disabled={isCallActive}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['burt', 'marissa', 'andrea', 'sarah', 'phillip', 'steve', 'joseph', 'myra', 'paula', 'ryan', 'drew', 'paul', 'mrb', 'matilda', 'mark'].map((voice) => (
+                    <SelectItem key={voice} value={voice}>
+                      {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                Role
+              </label>
+              <Select value={defaultCall.model.messages[0].role} onValueChange={(value) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, messages: [{ ...defaultCall.model.messages[0], role: value }] } })} disabled={isCallActive}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['assistant', 'function', 'user', 'system', 'tool'].map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">
+                Provider
+              </label>
+              <Select value={defaultCall.model.provider} onValueChange={(value) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, provider: value } })} disabled={isCallActive}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="openai">OpenAI</SelectItem>
+                  <SelectItem value="anthropic">Anthropic</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">
+                Model
+              </label>
+              <Select value={defaultCall.model.model} onValueChange={(value) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, model: value } })} disabled={isCallActive}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                  <SelectItem value="gpt-4">GPT-4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
+                Temperature
+              </label>
+              <div className="flex items-center">
+                <Slider
+                  id="temperature"
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  className="w-full mr-4"
+                  defaultValue={[defaultCall.model.temperature]}
+                  onValueChange={(value) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, temperature: value[0] } })}
+                  disabled={isCallActive}
+                />
+                <span className="text-sm font-medium text-gray-700">{temperature.toFixed(1)}</span>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="maxTokens" className="block text-sm font-medium text-gray-700 mb-1">
+                Max Tokens
+              </label>
+              <Input
+                value={defaultCall.model.maxTokens}
+                onChange={(e) => setDefaultCall({ ...defaultCall, model: { ...defaultCall.model, maxTokens: e.target.value } })}
+                type="number"
+                id="maxTokens"
+                placeholder="Enter max tokens"
+                className="w-full"
+                disabled={isCallActive}
+              />
+            </div>
           </div>
         </div>
+
       </div>
 
-      {/* Right Card: Call History Table */}
-      <div className="bg-white rounded-lg shadow-lg p-6 w-1/2">
-        <h2 className="text-2xl font-bold mb-4">Call History</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Number</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {callHistory.map((call, index) => (
-                <tr key={index}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.number}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.date}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.duration}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button onClick={() => startCall(call.number)} disabled={isCallActive} className="bg-green-500 hover:bg-green-600 text-white">
-                      <PhoneIcon className="mr-2 h-4 w-4" /> Call
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {isCallActive && (
-          <div className="mt-4">
-            <Button onClick={endCall} variant="destructive" className="w-full">
-              <PhoneOffIcon className="mr-2 h-4 w-4" /> End Call
-            </Button>
-            <div className="text-lg font-semibold text-center mt-2">
-              Status: {callStatus}
-            </div>
-            <div className="flex justify-center mt-2">
-              <MicIcon className="h-8 w-8 text-blue-500 animate-pulse" />
-            </div>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

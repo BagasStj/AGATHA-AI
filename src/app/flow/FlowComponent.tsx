@@ -16,6 +16,7 @@ import { FileText, Play, Plus, Save, SaveAll, Trash2 } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
+import NodeInfoCardDoc from './components/NodeInfoCardDoc';
 
 interface NodeData {
   label: string;
@@ -300,6 +301,21 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
   const onPublish = useCallback(async () => {
     const vapiNode: any = nodes.find(node => node.data.nodeType === 'vapi');
+    const llmChatPdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
+    if (llmChatPdfNode) {
+      if (!llmChatPdfNode.data.pdfFile) {
+        setSelectedNode(llmChatPdfNode);
+        toast({
+          title: "Error",
+          description: "Please upload a PDF file before running.",
+          variant: "destructive",
+        });
+        
+        return;
+      }
+      setShowChatDialog(true);
+      return;
+    }
     if (vapiNode) {
       console.log('GET PARAMS', defaultCall)
 
@@ -380,6 +396,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     { type: 'Output', label: 'Output' },
     { type: 'vapi', label: 'Vapi' },
     { type: 'LLM Chat', label: 'LLM Chat' },
+    { type: 'LLM Chat PDF', label: 'LLM Chat PDF' },
     // Add more node types here as needed
   ];
 
@@ -470,7 +487,13 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 onClose={closeNodeInfo}
                 onUpdateNode={onUpdateNodevapi}
               />
-            ) : selectedNode && (
+            ) : selectedNode && selectedNode.data.nodeType === 'LLM Chat PDF' ? (
+              <NodeInfoCardDoc
+                node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                onClose={closeNodeInfo}
+                onUpdateNode={onUpdateNode}
+              />
+            )        : selectedNode && (
               <NodeInfoCard
                 node={selectedNode as Node<NodeData & Record<string, unknown>>}
                 onClose={closeNodeInfo}

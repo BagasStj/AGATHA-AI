@@ -23,6 +23,44 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
 
   useEffect(scrollToBottom, [messages]);
 
+  const fetchChatResponsePdf = async (input: string) => {
+    try {
+      const pdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
+      if (!pdfNode || !pdfNode.data.pdfFile) {
+        throw new Error('PDF file not found');
+      }
+      let formData = new FormData();
+      if (pdfNode.data.pdfFile instanceof Blob) {
+        formData.append("files", pdfNode.data.pdfFile);
+      } else {
+        console.error('PDF file is not a Blob');
+        throw new Error('Invalid PDF file');
+      }
+      formData.append("chunkSize", pdfNode.data.chunkSize?.toString() ?? '');
+      formData.append("chunkOverlap", pdfNode.data.chunkOverlap?.toString() ?? '');
+      formData.append("topK", pdfNode.data.topK?.toString() ?? '');
+      formData.append("question", input);
+
+      const response = await fetch(
+        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/ee67ef73-eef3-473f-8d99-3ba7a068a866",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data);
+      return data;
+    } catch (error) {
+      console.error('Error fetching chat response:', error);
+      return null;
+    }
+  };
   const fetchChatResponse = async (input: string) => {
     try {
       const response = await fetch('/api/chat-flowise', {
@@ -84,7 +122,16 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       const userMessage = { role: 'user' as const, content: input };
       setMessages(prevMessages => [...prevMessages, userMessage]);
 
-      if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
+      if (nodes.find(node => node.data.nodeType === 'LLM Chat PDF')) {
+        const response = await fetchChatResponsePdf(input);
+        if (response) {
+          const assistantMessage = {
+            role: 'ai' as const,
+            content: response.text,
+          };
+          setMessages(prevMessages => [...prevMessages, assistantMessage]);
+        }
+      } else if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
         const response = await fetchChatResponse(input);
         if (response) {
           const assistantMessage = {

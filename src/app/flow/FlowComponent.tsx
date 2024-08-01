@@ -12,11 +12,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2 } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
 import NodeInfoCardDoc from './components/NodeInfoCardDoc';
+import VapiPopup from './components/VapiPopup';
+
 
 interface NodeData {
   label: string;
@@ -82,6 +84,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     },
   });
   const [vapiClient, setVapiClient] = useState<VapiClient | null>(null);
+  const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
+  const [showVapiPopup, setShowVapiPopup] = useState(false);
+
 
 
   const onConnect = useCallback(
@@ -92,11 +97,19 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
   const loadFlow = useCallback(async (flowId: string) => {
     try {
+      setLoadingProgress(0);
       const response = await fetch(`/api/flows/${flowId}`);
       if (!response.ok) {
         throw new Error('Failed to load flow');
       }
       const flow = await response.json();
+
+      // Simulate loading progress
+      for (let i = 0; i <= 100; i += 10) {
+        setLoadingProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait for 100ms
+      }
+
       setNodes(flow.nodes);
       setEdges(flow.edges);
       setCurrentFlowId(flowId);
@@ -114,6 +127,8 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         description: "Failed to load flow. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoadingProgress(null);
     }
   }, [setNodes, setEdges, toast]);
 
@@ -300,8 +315,42 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
 
   const onPublish = useCallback(async () => {
-    const vapiNode: any = nodes.find(node => node.data.nodeType === 'vapi');
+    const startNode = nodes.find(node => node.data.nodeType === 'Start');
+    const outputNode = nodes.find(node => node.data.nodeType === 'END');
+  
+    if (!startNode || !outputNode) {
+      toast({
+        title: "Error",
+        description: "Flow must contain both Start and END nodes.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    const isConnected = (node1: Node, node2: Node) => {
+      return edges.some(edge => 
+        (edge.source === node1.id && edge.target === node2.id) ||
+        (edge.source === node2.id && edge.target === node1.id)
+      );
+    };
+  
+    const allNodesConnected = nodes.every(node => {
+      if (node.id === startNode.id) return true;
+      return edges.some(edge => edge.target === node.id || edge.source === node.id);
+    });
+  
+    if (!allNodesConnected) {
+      toast({
+        title: "Error",
+        description: "All nodes must be connected in the flow.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
     const llmChatPdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
+    const vapiNode = nodes.find(node => node.data.nodeType === 'vapi');
+  
     if (llmChatPdfNode) {
       if (!llmChatPdfNode.data.pdfFile) {
         setSelectedNode(llmChatPdfNode);
@@ -310,15 +359,15 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           description: "Please upload a PDF file before running.",
           variant: "destructive",
         });
-        
         return;
       }
       setShowChatDialog(true);
       return;
     }
+  
     if (vapiNode) {
-      console.log('GET PARAMS', defaultCall)
-
+      console.log('GET PARAMS', defaultCall);
+  
       if (!vapiClient) {
         toast({
           title: "Error",
@@ -328,8 +377,8 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         });
         return;
       }
+  
       try {
-        // error vapi client api key limit 10 per mhoont
         const call = await vapiClient.start({
           model: {
             provider: defaultCall.model.provider,
@@ -346,13 +395,18 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
             provider: "11labs",
             voiceId: defaultCall.voice.voiceId,
           },
-
         });
-        vapiClient.on('call-start', () => toast({ title: "Call Status", description: "Ringing..." }));
+  
+        vapiClient.on('call-start', () => {
+          toast({ title: "Call Status", description: "Ringing..." });
+          setShowVapiPopup(true);
+        });
         vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" }));
-        vapiClient.on('call-end', () => toast({ title: "Call Status", description: "Call ended" }));
-
-        // setShowChatDialog(true);
+        vapiClient.on('call-end', () => {
+          toast({ title: "Call Status", description: "Call ended" });
+          setShowVapiPopup(false);
+        });
+  
       } catch (error) {
         console.error('Error starting VAPI call:', error);
         toast({
@@ -364,7 +418,15 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     } else {
       setShowChatDialog(true);
     }
-  }, [nodes, vapiClient, toast]);
+  }, [nodes, edges, vapiClient, toast, defaultCall, setSelectedNode]);
+
+  const handleVapiDisconnect = useCallback(() => {
+    if (vapiClient) {
+      vapiClient.stop();
+      setShowVapiPopup(false);
+    }
+  }, [vapiClient]);
+
   const onCreateNewFlow = useCallback(() => {
     setNodes([]);
     setEdges([]);
@@ -391,15 +453,30 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
 
   const nodeTypeList = [
-    { type: 'Start', label: 'Start' },
-    { type: 'LLM Antonim', label: 'LLM Antonim' },
-    { type: 'Output', label: 'Output' },
-    { type: 'vapi', label: 'Vapi' },
-    { type: 'LLM Chat', label: 'LLM Chat' },
-    { type: 'LLM Chat PDF', label: 'LLM Chat PDF' },
-    // Add more node types here as needed
+    { type: 'Start', label: 'START', icon: Home, bgColor: 'bg-blue-500' },
+    { type: 'LLM Antonim', label: 'LLM Antonim', icon: Brain, bgColor: 'bg-purple-500' },
+    { type: 'END', label: 'END', icon: Goal, bgColor: 'bg-orange-500' },
+    { type: 'vapi', label: 'Vapi', icon: Phone, bgColor: 'bg-green-500' },
+    { type: 'LLM Chat', label: 'LLM Chat', icon: Brain, bgColor: 'bg-purple-500' },
+    { type: 'LLM Chat PDF', label: 'LLM Chat PDF', icon: Brain, bgColor: 'bg-purple-500' },
   ];
 
+  if (loadingProgress !== null) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-transparent bg-opacity-75 z-50">
+        <div className="text-center">
+          <div className="mb-4 text-xl font-semibold">Loading Flow</div>
+          <div className="w-64 h-6 bg-gray-200 rounded-full">
+            <div
+              className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${loadingProgress}%` }}
+            ></div>
+          </div>
+          <div className="mt-2">{loadingProgress}%</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full  flex flex-col relative">
@@ -447,6 +524,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <DropdownMenuContent className="z-[999999]">
                 {nodeTypeList.map((nodeType) => (
                   <DropdownMenuItem key={nodeType.type} onSelect={() => onAddNode(nodeType.type)}>
+                    <div className={`w-6 h-6 rounded-full ${nodeType.bgColor} flex items-center justify-center mr-2`}>
+                      <nodeType.icon className="w-4 h-4 text-white" />
+                    </div>
                     {nodeType.label}
                   </DropdownMenuItem>
                 ))}
@@ -475,11 +555,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               edgeTypes={edgeTypes}
               proOptions={proOptions}
               defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-              className="flex-grow"
+              className="flex-grow "
             >
               <Controls />
               <MiniMap />
-              <Background variant={BackgroundVariant.Lines} gap={12} size={1} />
+              <Background bgColor='#f2f6ff' />
             </ReactFlow>
             {selectedNode && selectedNode.data.nodeType === 'vapi' ? (
               <NodeInfoCardVapi
@@ -493,7 +573,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 onClose={closeNodeInfo}
                 onUpdateNode={onUpdateNode}
               />
-            )        : selectedNode && (
+            ) : selectedNode && (
               <NodeInfoCard
                 node={selectedNode as Node<NodeData & Record<string, unknown>>}
                 onClose={closeNodeInfo}
@@ -507,6 +587,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 nodes={nodes}
                 edges={edges}
               />
+            )}
+            {showVapiPopup && (
+              <VapiPopup onDisconnect={handleVapiDisconnect} />
             )}
           </div>
 

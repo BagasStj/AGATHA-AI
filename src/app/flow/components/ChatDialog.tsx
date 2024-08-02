@@ -61,6 +61,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       return null;
     }
   };
+
   const fetchChatResponse = async (input: string) => {
     try {
       const response = await fetch('/api/chat-flowise', {
@@ -89,18 +90,18 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     }
   };
 
-  const fetchChatResponseChat = async (input: string) => {
+  const fetchChatResponseChat = async (input: string, prompt: string, topic: string) => {
     try {
-      const response = await fetch('/api/chat-general-flowise', {
+      const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/f462c2a1-e1b1-4dac-9ffb-3cb183d7963b', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           question: input,
-          nodes: nodes,
-          edges: edges,
-          selectedNodeId: selectedNode?.id
+          overrideConfig: {
+            prefix: `Give the answer of every input, only answer about ${topic}`,
+          }
         }),
       });
 
@@ -122,6 +123,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       const userMessage = { role: 'user' as const, content: input };
       setMessages(prevMessages => [...prevMessages, userMessage]);
 
+
       if (nodes.find(node => node.data.nodeType === 'LLM Chat PDF')) {
         const response = await fetchChatResponsePdf(input);
         if (response) {
@@ -141,11 +143,25 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }
       } else if (nodes.find(node => node.data.nodeType === 'LLM Chat')) {
-        const response = await fetchChatResponseChat(input);
+        let prompt: any
+        let topic: any
+        const chatNode = nodes.find(node => node.data.nodeType === 'LLM Chat');
+        if (chatNode) {
+          console.log('Found LLM Chat node:', chatNode);
+          prompt = chatNode.data.prompt; // Use prompt from the found node
+          topic = chatNode.data.topic; // Use topic from the found node
+        } else {
+          console.log('No LLM Chat node found');
+          prompt = ''; // Set default value if no LLM Chat node is found
+          topic = ''; // Set default value if no LLM Chat node is found
+        }
+        console.log('Prompt:', prompt, 'Topic:', topic);
+        const response = await fetchChatResponseChat(input, prompt, topic);
         if (response) {
+          console.log('result===>2', response)
           const assistantMessage = {
             role: 'ai' as const,
-            content: response.content,
+            content: response.text,
           };
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }

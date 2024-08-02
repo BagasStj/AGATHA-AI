@@ -321,7 +321,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     if (!startNode || !outputNode) {
       toast({
         title: "Error",
-        description: "Flow must contain both Start and END nodes.",
+        description: "Flow must contain both Start and Output nodes.",
         variant: "destructive",
       });
       return;
@@ -395,6 +395,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
             provider: "11labs",
             voiceId: defaultCall.voice.voiceId,
           },
+          // prompt: defaultCall.firstMessage, // Add the prompt parameter here
         });
   
         vapiClient.on('call-start', () => {

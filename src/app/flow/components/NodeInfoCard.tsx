@@ -1,15 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Node } from '@xyflow/react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
+    nodeType?: string;
+    topic?: string;
+    prompt?: string;
     model?: string;
     temperature?: number;
     topP?: number;
@@ -26,6 +23,8 @@ interface NodeInfoCardProps {
 
 const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode }) => {
     const [title, setTitle] = useState('');
+    const [topic, setTopic] = useState('');
+    const [prompt, setPrompt] = useState('');
     const [model, setModel] = useState('gpt-3.5-turbo');
     const [temperature, setTemperature] = useState(0.7);
     const [topP, setTopP] = useState(1.0);
@@ -36,6 +35,8 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     useEffect(() => {
         if (node) {
             setTitle(node.data.label);
+            setTopic(node.data.topic ?? '');
+            setPrompt(node.data.prompt ?? '');
             setModel(node.data.model ?? 'gpt-3.5-turbo');
             setTemperature(node.data.temperature ?? 0.7);
             setTopP(node.data.topP ?? 1.0);
@@ -50,6 +51,8 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const handleSave = () => {
         onUpdateNode(node.id, {
             label: title,
+            topic,
+            prompt,
             model,
             temperature,
             topP,
@@ -80,19 +83,42 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-                    <Select value={model} onValueChange={setModel}>
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
-                            <SelectItem value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16k</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-                
+                {node.data.nodeType === 'LLM Chat' ? (
+                    <>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                            <input
+                                type="text"
+                                value={topic}
+                                onChange={(e) => setTopic(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                            />
+                        </div>
+                        {/* <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Prompt</label>
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                                rows={4}
+                            />
+                        </div> */}
+                    </>
+                ) : (
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                        <Select value={model} onValueChange={setModel}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                                <SelectItem value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16k</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {/* Other input fields for temperature, topP, presencePenalty, frequencyPenalty, maxTokens */}
             </div>
             <div className="p-6 pt-4 border-t border-gray-200">
                 <button

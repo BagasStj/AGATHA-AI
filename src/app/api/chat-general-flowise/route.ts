@@ -1,17 +1,22 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const { question } = await req.json();
+  const { question  , prompt} = await req.json();
 
   try {
     const response = await fetch(
-      "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/64213554-ae28-4668-9a2a-4e001e27da33",
+      "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/f462c2a1-e1b1-4dac-9ffb-3cb183d7963b",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({
+          "question": "hi",
+          "overrideConfig": {
+              "prefix": "Give the answer of every input, only answer about java"
+          }
+      })
       }
     );
 

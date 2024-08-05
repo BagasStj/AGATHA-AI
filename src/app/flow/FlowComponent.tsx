@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
@@ -206,7 +206,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     if (existingNodes.length > 0) {
       const lastNode = existingNodes[existingNodes.length - 1];
       newPosition = {
-        x: lastNode.position.x + 150 / zoom,
+        x: lastNode.position.x + 260 / zoom,
         y: lastNode.position.y
       };
     } else {
@@ -458,7 +458,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     { type: 'LLM Antonim', label: 'LLM Antonim', icon: Brain, bgColor: 'bg-purple-500' },
     { type: 'END', label: 'END', icon: Goal, bgColor: 'bg-orange-500' },
     { type: 'vapi', label: 'Vapi', icon: Phone, bgColor: 'bg-green-500' },
-    { type: 'LLM Chat', label: 'LLM Chat', icon: Brain, bgColor: 'bg-purple-500' },
+    { type: 'LLM Chat', label: 'AI With Custom Prompt', icon: Brain, bgColor: 'bg-purple-500' },
     { type: 'LLM Chat PDF', label: 'LLM Chat PDF', icon: Brain, bgColor: 'bg-purple-500' },
   ];
 
@@ -495,16 +495,16 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
             </div>
 
             <div>
-              <Button onClick={onCreateNewFlow} variant="ghost" className="ml-2 bg-[#656d70] hover:bg-blue-400 text-white" title="Create New Flow">
-                <FileText className="h-5 w-5" />
+              <Button onClick={onCreateNewFlow} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Create New Flow">
+                <FilePlus  className="h-5 w-5"  />
               </Button>
-              <Button onClick={onSave} variant="ghost" className="ml-2 bg-[#656d70] hover:bg-blue-400 text-white" title="Save">
+              <Button onClick={onSave} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Save">
                 <Save className="h-5 w-5" />
               </Button>
               {/* <Button onClick={onSaveAs} variant="ghost" className="ml-2 bg-blue-500 hover:bg-blue-400 text-white" title="Save As">
                 <SaveAll className="h-5 w-5" />
               </Button> */}
-              <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-blue-500 hover:bg-blue-400 text-white">
+              <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-green-500 hover:bg-green-600 text-white">
                 <Play className="h-5 w-5 mr-2" />
                 Run
               </Button>
@@ -560,7 +560,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
             >
               <Controls />
               <MiniMap />
-              <Background bgColor='#f2f6ff' />
+              <Background bgColor='#f4f4f4' />
             </ReactFlow>
             {selectedNode && selectedNode.data.nodeType === 'vapi' ? (
               <NodeInfoCardVapi

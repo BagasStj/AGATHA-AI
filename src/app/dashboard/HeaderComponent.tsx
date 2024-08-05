@@ -34,6 +34,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Home, MessageSquare, PanelLeft, Search, User, Users2, X } from "lucide-react"
+import { useClerk } from "@clerk/nextjs";
+
 
 interface HeaderComponentProps {
   currentUser: any;
@@ -45,6 +47,11 @@ interface HeaderComponentProps {
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const { signOut } = useClerk();
+
+  const handleSignOut = () => {
+    signOut();
+  };
 
   useEffect(() => {
     setIsClient(true);

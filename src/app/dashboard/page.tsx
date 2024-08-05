@@ -14,7 +14,7 @@ import EditorPage from '../novel/page'
 import FlowPage from '../flow/page'
 import AIPhonePage from '../aiphone/page'
 import ChatPageFlowise from '../chat-flowise/page'
-
+import { InactivityHandler } from '@/components/InactivityHandler '
 
 export default function Dashboard() {
 
@@ -206,6 +206,7 @@ const handleDeleteUser = async (id: string) => {
           </main>
         </div>
       </div>
+      <InactivityHandler />
     </TooltipProvider>
   )
 }

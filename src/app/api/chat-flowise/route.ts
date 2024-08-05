@@ -5,7 +5,7 @@ export async function POST(req: Request) {
 
   try {
     const response = await fetch(
-      "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/f903b2f7-6e8a-464c-b299-80011cb0ac73",
+      "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/04b0b7d2-45b8-4aed-be95-362958315cb2",
       {
         method: "POST",
         headers: {

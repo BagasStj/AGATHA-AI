@@ -23,6 +23,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
 
   useEffect(scrollToBottom, [messages]);
 
+
+  // LLM CHAT PDF https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
   const fetchChatResponsePdf = async (input: string) => {
     try {
       const pdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
@@ -42,7 +44,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       formData.append("question", input);
 
       const response = await fetch(
-        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/ee67ef73-eef3-473f-8d99-3ba7a068a866",
+        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/aeccfeee-a1c8-479e-9497-d31b690558d5",
         {
           method: "POST",
           body: formData
@@ -62,7 +64,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     }
   };
 
-  const fetchChatResponse = async (input: string) => {
+  // ANTONIM API https://flowiseai-railway-production-9629.up.railway.app/canvas/04b0b7d2-45b8-4aed-be95-362958315cb2
+  const fetchChatResponse = async (input: string) => { //antonim-api
     try {
       const response = await fetch('/api/chat-flowise', {
         method: 'POST',
@@ -90,9 +93,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     }
   };
 
+  // GENERAL CHAT WITH PROMPT https://flowiseai-railway-production-9629.up.railway.app/canvas/05cd0bdc-93b0-46a7-991b-36c8c543958d
   const fetchChatResponseChat = async (input: string, prompt: string) => {
     try {
-      const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/6f398131-094a-405e-81de-7c3a76e26704', {
+      const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/05cd0bdc-93b0-46a7-991b-36c8c543958d', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Save } from 'lucide-react';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -37,16 +38,16 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
     if (!node) return null;
 
     const handleSave = () => {
-        if (!pdfFile) {
-          alert('Please upload a PDF file before saving.');
-          return;
-        }
+        // if (!pdfFile) {
+        //   alert('Please upload a PDF file before saving.');
+        //   return;
+        // }
         onUpdateNode(node.id, {
           label: title,
           chunkSize,
           chunkOverlap,
           topK,
-          pdfFile: pdfFile,
+        //   pdfFile: pdfFile,
         });
         onClose();
       };
@@ -107,29 +108,14 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
                         className="w-full"
                     />
                 </div>
-                <div>
-                    <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                        ref={fileInputRef}
-                    />
-                    <Button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full"
-                        variant="outline"
-                    >
-                        Upload PDF
-                    </Button>
-                    {pdfFile && <p className="mt-2 text-sm text-gray-600">{pdfFile.name}</p>}
-                </div>
+                
             </div>
             <div className="p-6 pt-4 border-t border-gray-200">
                 <Button
                     onClick={handleSave}
-                    className="w-full"
+                    className="w-full bg-[#6c47ff] flex items-center justify-center"
                 >
+                    <Save className="w-4 h-4 mr-2" />
                     Save
                 </Button>
             </div>

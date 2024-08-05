@@ -1,39 +1,90 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send } from 'lucide-react';
+import { X, Send, Fullscreen, Minimize, UserIcon, Eraser } from 'lucide-react';
 import { Node, Edge } from '@xyflow/react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogContentChat,
+} from "@/components/ui/dialog";
 
 interface ChatDialogProps {
   onClose: () => void;
   selectedNode: Node | null;
   nodes: Node[];
   edges: Edge[];
+  isNodeInfoCardOpen: boolean;
 }
 
-const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, edges }) => {
-  const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
-  const [input, setInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+const LoadingIndicator = () => (
+  <div className="flex justify-center items-center space-x-1 mb-4">
+    <div className="w-2 h-2 bg-[#6c47ff] rounded-full animate-bounce" style={{ animationDelay: '0s' }}></div>
+    <div className="w-2 h-2 bg-[#6c47ff] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+    <div className="w-2 h-2 bg-[#6c47ff] rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+  </div>
+);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+const MessageInput = ({ onSend }: { onSend: (message: string) => void }) => {
+  const [input, setInput] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (input.trim()) {
+      onSend(input);
+      setInput('');
+    }
   };
 
-  useEffect(scrollToBottom, [messages]);
+  return (
+    <form onSubmit={handleSubmit} className="flex items-center space-x-2 p-4 border-t">
+      <Input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Type your message..."
+        className="flex-grow"
+      />
+      <Button type="submit" size="icon" className="bg-[#6c47ff]  hover:bg-[#947fe4]  text-white">
+        <Send className="h-4 w-4" />
+      </Button>
+    </form>
+  );
+};
 
+const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, edges, isNodeInfoCardOpen }) => {
+  const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([
+    { "role": "ai", "content": "Hi there! How can I help?" }
+  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // LLM CHAT PDF https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
+
+  // LLM By Document https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
   const fetchChatResponsePdf = async (input: string) => {
     try {
-      const pdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
-      if (!pdfNode || !pdfNode.data.pdfFile) {
+      const pdfNode = nodes.find(node => node.data.nodeType === 'LLM By Document');
+      const pdfNodeDOC = nodes.find(node => node.data.nodeType === 'Knowledge Document');
+      if (!pdfNode || !pdfNodeDOC || !pdfNodeDOC.data.pdfFile) {
         throw new Error('PDF file not found');
       }
       let formData = new FormData();
-      if (pdfNode.data.pdfFile instanceof Blob) {
-        formData.append("files", pdfNode.data.pdfFile);
+      if (pdfNodeDOC.data.pdfFile instanceof Blob) {
+        formData.append("files", pdfNodeDOC.data.pdfFile);
       } else {
         console.error('PDF file is not a Blob');
         throw new Error('Invalid PDF file');
@@ -44,7 +95,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       formData.append("question", input);
 
       const response = await fetch(
-        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/aeccfeee-a1c8-479e-9497-d31b690558d5",
+        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/bc112d02-d1c5-4f58-93f3-7025924bce77",
         {
           method: "POST",
           body: formData
@@ -122,110 +173,164 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     }
   };
 
-  const handleSend = async () => {
-    if (input.trim()) {
-      const userMessage = { role: 'user' as const, content: input };
-      setMessages(prevMessages => [...prevMessages, userMessage]);
-  
-      const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM Chat');
-  
-      if (llmChatNodes.length === 2) {
-        // Chain two LLM Chat nodes
-        let firstPrompt :any= llmChatNodes[0].data.prompt || '';
-        let secondPrompt :any= llmChatNodes[1].data.prompt || '';
-  
-        console.log('First Prompt:', firstPrompt);
-        console.log('Second Prompt:', secondPrompt);
-  
-        const firstResponse = await fetchChatResponseChat(input, firstPrompt);
-        if (firstResponse) {
-          console.log('First LLM Response:', firstResponse);
-          const secondResponse = await fetchChatResponseChat(firstResponse.text, secondPrompt);
-          if (secondResponse) {
-            console.log('Second LLM Response:', secondResponse);
-            const assistantMessage = {
-              role: 'ai' as const,
-              content: secondResponse.text,
-            };
-            setMessages(prevMessages => [...prevMessages, assistantMessage]);
-          }
-        }
-      } else if (llmChatNodes.length === 1) {
-        // Single LLM Chat node
-        const chatNode = llmChatNodes[0];
-        const prompt :any= chatNode.data.prompt || '';
-        console.log('Prompt:', prompt);
-        const response = await fetchChatResponseChat(input, prompt);
-        if (response) {
-          console.log('LLM Response:', response);
+  const handleSend = useCallback(async (input: string) => {
+    setIsLoading(true);
+    const userMessage = { role: 'user' as const, content: input };
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+
+    const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM Chat');
+
+    if (llmChatNodes.length === 2) {
+      // Chain two LLM Chat nodes
+      let firstPrompt: any = llmChatNodes[0].data.prompt || '';
+      let secondPrompt: any = llmChatNodes[1].data.prompt || '';
+
+      console.log('First Prompt:', firstPrompt);
+      console.log('Second Prompt:', secondPrompt);
+
+      const firstResponse = await fetchChatResponseChat(input, firstPrompt);
+      if (firstResponse) {
+        console.log('First LLM Response:', firstResponse);
+        const secondResponse = await fetchChatResponseChat(firstResponse.text, secondPrompt);
+        if (secondResponse) {
+          console.log('Second LLM Response:', secondResponse);
           const assistantMessage = {
             role: 'ai' as const,
-            content: response.text,
+            content: secondResponse.text,
           };
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }
-      } else if (nodes.find(node => node.data.nodeType === 'LLM Chat PDF')) {
-        const response = await fetchChatResponsePdf(input);
-        if (response) {
-          const assistantMessage = {
-            role: 'ai' as const,
-            content: response.text,
-          };
-          setMessages(prevMessages => [...prevMessages, assistantMessage]);
-        }
-      } else if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
-        const response = await fetchChatResponse(input);
-        if (response) {
-          const assistantMessage = {
-            role: 'ai' as const,
-            content: response.content,
-          };
-          setMessages(prevMessages => [...prevMessages, assistantMessage]);
-        }
-      } else {
-        // Handle other node types or default behavior
-        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
       }
-  
-      setInput('');
+      console.log('MESSAGES', messages);
+
+    } else if (llmChatNodes.length === 1) {
+      // Single LLM Chat node
+      const chatNode = llmChatNodes[0];
+      const prompt: any = chatNode.data.prompt || '';
+      console.log('Prompt:', prompt);
+      const response = await fetchChatResponseChat(input, prompt);
+      if (response) {
+        console.log('LLM Response:', response);
+        const assistantMessage = {
+          role: 'ai' as const,
+          content: response.text,
+        };
+        setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      }
+      console.log('MESSAGES', messages);
+
+    } else if (nodes.find(node => node.data.nodeType === 'LLM By Document')) {
+      const response = await fetchChatResponsePdf(input);
+      if (response) {
+        const assistantMessage = {
+          role: 'ai' as const,
+          content: response.text,
+        };
+        setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      }
+    } else if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
+      const response = await fetchChatResponse(input);
+      if (response) {
+        const assistantMessage = {
+          role: 'ai' as const,
+          content: response.content,
+        };
+        setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      }
+    } else {
+      // Handle other node types or default behavior
+      setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
     }
-  };
+    setIsLoading(false);
+  }, [nodes, edges, selectedNode]);
 
-  return (
-    <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 h-[70vh] flex flex-col max-h-[calc(100vh-6rem)]">
-      <div className="p-6 pb-4">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-          <X className="w-6 h-6" />
-        </button>
-        <h3 className="text-xl font-bold mb-6 text-gray-800">Chat AI Flowise</h3>
+    const toggleFullscreen = useCallback(() => {
+      setIsFullscreen(prev => !prev);
+    }, []);
+
+    const clearChat = useCallback(() => {
+      setMessages([]);
+    }, []);
+
+  const ChatContent = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+        <h2 className="text-lg font-semibold text-gray-700">Chat Assistant</h2>
+        <div className="flex space-x-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                  {isFullscreen ? <Minimize className="h-5 w-5" /> : <Fullscreen className="h-5 w-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={clearChat}>
+                  <Eraser  className="h-5 w-5" /> 
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clear Chat</p>
+              </TooltipContent>
+            </Tooltip>
+            {!isFullscreen && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" onClick={onClose}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Close</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </TooltipProvider>
+        </div>
       </div>
-
-      <ScrollArea className="px-6 pb-4 space-y-4 overflow-y-auto flex-grow">
-        {messages.map((msg, index) => (
-          <div key={index} className={`mb-4 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-            <div className={`inline-block p-3 rounded-lg ${msg.role === 'user' ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
-              }`}>
-              {msg.content}
+      
+      <ScrollArea className="flex-grow p-4 space-y-4 h-[1vh]">
+        {messages.map((m, index) => (
+          <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+            <div className={`max-w-[70%] ${m.role === 'user' ? 'bg-[#6c47ff]  text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-3 shadow`}>
+              <div className="flex items-start">
+                {m.role === 'ai' && (
+                  <div className="bg-gray-400 rounded-full p-1 mr-2">
+                    <UserIcon className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                <div className="break-words">{m.content}</div>
+              </div>
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </ScrollArea>
 
-      <div className="p-6 pt-4 border-t border-gray-200">
-        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex items-center">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-grow mr-2"
-          />
-          <Button type="submit" size="icon" className="bg-gray-700 hover:bg-gray-800 text-white">
-            <Send className="h-4 w-4" />
-          </Button>
-        </form>
-      </div>
+      {isLoading && <LoadingIndicator />}
+      
+      <MessageInput onSend={handleSend} />
     </div>
+  );
+
+  return (
+    <>
+      <div 
+        className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(27vw+1rem)]' : 'right-6'} top-40 w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
+      >
+        <ChatContent />
+      </div>
+      <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
+        <DialogContentChat className="max-w-4xl w-full z-[9999999] h-[90vh]">
+          <ChatContent />
+        </DialogContentChat>
+      </Dialog>
+    </>
   );
 };
 

@@ -12,12 +12,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
 import NodeInfoCardDoc from './components/NodeInfoCardDoc';
 import VapiPopup from './components/VapiPopup';
+import NodeInfoCardKnowledgeRetrieval from './components/NodeInfoCardKnowledgeRetrieval';
 
 
 interface NodeData {
@@ -96,6 +97,8 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
 
   const loadFlow = useCallback(async (flowId: string) => {
+    setSelectedNode(null);
+    setShowChatDialog(false);
     try {
       setLoadingProgress(0);
       const response = await fetch(`/api/flows/${flowId}`);
@@ -179,11 +182,28 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     event.stopPropagation();
     setSelectedNode(node);
-  }, []);
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        style: {
+          ...n.style,
+          border: n.id === node.id ? '2px solid #3b82f6' : undefined,
+          borderRadius: n.id === node.id ? '1.5rem' : undefined,
+        },
+      }))
+    );
+  }, [setNodes]);
 
   const closeNodeInfo = useCallback(() => {
     setSelectedNode(null);
-  }, []);
+    // setShowChatDialog(false);
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        style: { ...n.style, border: undefined },
+      }))
+    );
+  }, [setNodes]);
 
   const proOptions = useMemo(() => ({ hideAttribution: true }), []);
 
@@ -206,7 +226,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     if (existingNodes.length > 0) {
       const lastNode = existingNodes[existingNodes.length - 1];
       newPosition = {
-        x: lastNode.position.x + 260 / zoom,
+        x: lastNode.position.x + 280 / zoom,
         y: lastNode.position.y
       };
     } else {
@@ -317,7 +337,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const onPublish = useCallback(async () => {
     const startNode = nodes.find(node => node.data.nodeType === 'Start');
     const outputNode = nodes.find(node => node.data.nodeType === 'END');
-  
+
     if (!startNode || !outputNode) {
       toast({
         title: "Error",
@@ -326,19 +346,19 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
       });
       return;
     }
-  
+
     const isConnected = (node1: Node, node2: Node) => {
-      return edges.some(edge => 
+      return edges.some(edge =>
         (edge.source === node1.id && edge.target === node2.id) ||
         (edge.source === node2.id && edge.target === node1.id)
       );
     };
-  
+
     const allNodesConnected = nodes.every(node => {
       if (node.id === startNode.id) return true;
       return edges.some(edge => edge.target === node.id || edge.source === node.id);
     });
-  
+
     if (!allNodesConnected) {
       toast({
         title: "Error",
@@ -347,27 +367,28 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
       });
       return;
     }
-  
-    const llmChatPdfNode = nodes.find(node => node.data.nodeType === 'LLM Chat PDF');
+
+    const knowledgeDocumentNode = nodes.find(node => node.data.nodeType === "Knowledge Document");
     const vapiNode = nodes.find(node => node.data.nodeType === 'vapi');
-  
-    if (llmChatPdfNode) {
-      if (!llmChatPdfNode.data.pdfFile) {
-        setSelectedNode(llmChatPdfNode);
+    
+    if (knowledgeDocumentNode) {
+      console.log('NODES', knowledgeDocumentNode);
+      if ( !knowledgeDocumentNode.data.fileName) {
         toast({
           title: "Error",
-          description: "Please upload a PDF file before running.",
+          description: "Please upload a document before running.",
           variant: "destructive",
         });
+        setSelectedNode(knowledgeDocumentNode);
         return;
       }
       setShowChatDialog(true);
       return;
     }
-  
+
     if (vapiNode) {
       console.log('GET PARAMS', defaultCall);
-  
+
       if (!vapiClient) {
         toast({
           title: "Error",
@@ -377,7 +398,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         });
         return;
       }
-  
+
       try {
         const call = await vapiClient.start({
           model: {
@@ -397,7 +418,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           },
           // prompt: defaultCall.firstMessage, // Add the prompt parameter here
         });
-  
+
         vapiClient.on('call-start', () => {
           toast({ title: "Call Status", description: "Ringing..." });
           setShowVapiPopup(true);
@@ -407,7 +428,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           toast({ title: "Call Status", description: "Call ended" });
           setShowVapiPopup(false);
         });
-  
+
       } catch (error) {
         console.error('Error starting VAPI call:', error);
         toast({
@@ -455,13 +476,45 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
   const nodeTypeList = [
     { type: 'Start', label: 'START', icon: Home, bgColor: 'bg-blue-500' },
-    { type: 'LLM Antonim', label: 'LLM Antonim', icon: Brain, bgColor: 'bg-purple-500' },
-    { type: 'END', label: 'END', icon: Goal, bgColor: 'bg-orange-500' },
+    {
+      type: 'LLM',
+      label: 'LLM',
+      icon: Brain,
+      bgColor: 'bg-purple-500',
+      subMenu: [
+        // {
+        //   type: 'LLM Antonim', label: 'LLM Antonim', icon: Brain,
+        //   bgColor: 'bg-purple-500',
+        // },
+        {
+          type: 'LLM Chat', label: 'LLM With Custom Prompt', icon: Brain,
+          bgColor: 'bg-purple-500',
+        },
+        {
+          type: 'LLM By Document', label: 'LLM By Document', icon: Brain,
+          bgColor: 'bg-purple-500',
+        },
+      ]
+    },
+    {
+      type: 'Knowledge_Retrieval',
+      label: 'Knowledge Retrieval',
+      icon: BookOpen,
+      bgColor: 'bg-[#ff47bf]',
+      subMenu: [
+        {
+          type: 'Knowledge Document', label: 'Document', icon: ScrollText,
+          bgColor: 'bg-[#ff47bf]',
+        },
+        {
+          type: 'knowledge_url', label: 'url', icon: Link,
+          bgColor: 'bg-[#ff47bf]',
+        },
+      ]
+    },
     { type: 'vapi', label: 'Vapi', icon: Phone, bgColor: 'bg-green-500' },
-    { type: 'LLM Chat', label: 'AI With Custom Prompt', icon: Brain, bgColor: 'bg-purple-500' },
-    { type: 'LLM Chat PDF', label: 'LLM Chat PDF', icon: Brain, bgColor: 'bg-purple-500' },
+    { type: 'END', label: 'END', icon: Goal, bgColor: 'bg-orange-500' },
   ];
-
   if (loadingProgress !== null) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-transparent bg-opacity-75 z-50">
@@ -469,7 +522,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           <div className="mb-4 text-xl font-semibold">Loading Flow</div>
           <div className="w-64 h-6 bg-gray-200 rounded-full">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-300 ease-out"
+              className="h-full bg-[#6c47ff]  rounded-full transition-all duration-300 ease-out"
               style={{ width: `${loadingProgress}%` }}
             ></div>
           </div>
@@ -496,7 +549,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
             <div>
               <Button onClick={onCreateNewFlow} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Create New Flow">
-                <FilePlus  className="h-5 w-5"  />
+                <FilePlus className="h-5 w-5" />
               </Button>
               <Button onClick={onSave} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Save">
                 <Save className="h-5 w-5" />
@@ -504,7 +557,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               {/* <Button onClick={onSaveAs} variant="ghost" className="ml-2 bg-blue-500 hover:bg-blue-400 text-white" title="Save As">
                 <SaveAll className="h-5 w-5" />
               </Button> */}
-              <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-green-500 hover:bg-green-600 text-white">
+              <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-green-500 hover:bg-[#f4f4f4] text-white">
                 <Play className="h-5 w-5 mr-2" />
                 Run
               </Button>
@@ -522,14 +575,37 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                   <Plus className="w-6 h-6" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="z-[999999]">
+              <DropdownMenuContent className="z-[4] w-[15vw] ml-[13vw]" >
                 {nodeTypeList.map((nodeType) => (
-                  <DropdownMenuItem key={nodeType.type} onSelect={() => onAddNode(nodeType.type)}>
-                    <div className={`w-6 h-6 rounded-full ${nodeType.bgColor} flex items-center justify-center mr-2`}>
-                      <nodeType.icon className="w-4 h-4 text-white" />
-                    </div>
-                    {nodeType.label}
-                  </DropdownMenuItem>
+                  nodeType.type === 'LLM' || nodeType.type == 'Knowledge_Retrieval' ? (
+                    <DropdownMenu key={nodeType.type}>
+                      <DropdownMenuTrigger className="w-full text-left flex items-center px-2 py-1 hover:bg-gray-100">
+                        <div className={`w-6 h-6 rounded-full ${nodeType.bgColor} flex items-center justify-center mr-2`}>
+                          <nodeType.icon className="w-4 h-4 text-white" />
+                        </div>
+                        {nodeType.label}
+                        <ChevronRight className="ml-auto h-4 w-4" />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent side="right" alignOffset={-5} className="ml-2">
+                        {nodeType.subMenu!.map((subItem) => (
+                  
+                           <DropdownMenuItem key={subItem.type} onSelect={() => onAddNode(subItem.type)} className="flex items-center">
+                           <div className={`w-6 h-6 rounded-full ${subItem.bgColor} flex items-center justify-center mr-2`}>
+                             <subItem.icon className="w-4 h-4 text-white" />
+                           </div>
+                           {subItem.label}
+                         </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <DropdownMenuItem key={nodeType.type} onSelect={() => onAddNode(nodeType.type)} className="flex items-center">
+                      <div className={`w-6 h-6 rounded-full ${nodeType.bgColor} flex items-center justify-center mr-2`}>
+                        <nodeType.icon className="w-4 h-4 text-white" />
+                      </div>
+                      {nodeType.label}
+                    </DropdownMenuItem>
+                  )
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
@@ -537,7 +613,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <div
                 title='Remove Node'
                 onClick={() => onRemoveNode(selectedNode.id)}
-                className="absolute top-[20vh] left-[1vw]  z-[99] bg-red-600 h-[5vh] w-[2.3vw] flex justify-center items-center text-white hover:bg-red-500 rounded-full"
+                className="absolute top-[20vh] left-[1vw]  z-[4] bg-red-600 h-[5vh] w-[2.3vw] flex justify-center items-center text-white hover:bg-red-500 rounded-full"
               >
                 <Trash2 className="h-4 w-4" />
               </div>
@@ -562,24 +638,32 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <MiniMap />
               <Background bgColor='#f4f4f4' />
             </ReactFlow>
-            {selectedNode && selectedNode.data.nodeType === 'vapi' ? (
-              <NodeInfoCardVapi
-                node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                onClose={closeNodeInfo}
-                onUpdateNode={onUpdateNodevapi}
-              />
-            ) : selectedNode && selectedNode.data.nodeType === 'LLM Chat PDF' ? (
-              <NodeInfoCardDoc
-                node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                onClose={closeNodeInfo}
-                onUpdateNode={onUpdateNode}
-              />
-            ) : selectedNode && (
-              <NodeInfoCard
-                node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                onClose={closeNodeInfo}
-                onUpdateNode={onUpdateNode}
-              />
+            {selectedNode && !['Start', 'END'].includes(selectedNode.data.nodeType as string) && (
+              selectedNode.data.nodeType === 'vapi' ? (
+                <NodeInfoCardVapi
+                  node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                  onClose={closeNodeInfo}
+                  onUpdateNode={onUpdateNodevapi}
+                />
+              ) : selectedNode.data.nodeType === 'LLM By Document' ? (
+                <NodeInfoCardDoc
+                  node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                  onClose={closeNodeInfo}
+                  onUpdateNode={onUpdateNode}
+                />
+              ) : selectedNode.data.nodeType === 'Knowledge Document' ? (
+                <NodeInfoCardKnowledgeRetrieval
+                  node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                  onClose={closeNodeInfo}
+                  onUpdateNode={onUpdateNode}
+                />
+              ) : (
+                <NodeInfoCard
+                  node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                  onClose={closeNodeInfo}
+                  onUpdateNode={onUpdateNode}
+                />
+              )
             )}
             {showChatDialog && (
               <ChatDialog
@@ -587,6 +671,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 selectedNode={selectedNode}
                 nodes={nodes}
                 edges={edges}
+                isNodeInfoCardOpen={!!selectedNode  && !['Start', 'END'].includes(selectedNode.data.nodeType as string)}
               />
             )}
             {showVapiPopup && (

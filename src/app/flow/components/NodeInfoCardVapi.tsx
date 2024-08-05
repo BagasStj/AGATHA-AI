@@ -222,9 +222,9 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
             <div className="p-6 pt-4 border-t border-gray-200">
                 <button
                     onClick={handleSave}
-                    className="w-full bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out"
+                    className="w-full bg-[#6c47ff] text-white font-semibold py-2 px-4 rounded-md transition duration-300 ease-in-out"
                 >
-                    Set Prompt and Settings
+                    Save
                 </button>
             </div>
         </div>

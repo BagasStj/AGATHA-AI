@@ -1,13 +1,13 @@
-import { useUser } from "@clerk/nextjs";
+// import { useUser } from "@clerk/nextjs";
 
-function getCurrentUser() {
-    const { isLoaded, isSignedIn, user } = useUser();
+// function getCurrentUser() {
+//     const { isLoaded, isSignedIn, user } = useUser();
 
-    if (!isLoaded || !isSignedIn) {
-        return null;
-    }
+//     if (!isLoaded || !isSignedIn) {
+//         return null;
+//     }
 
-    return user;
-}
+//     return user;
+// }
 
-export default getCurrentUser;
+// export default getCurrentUser;

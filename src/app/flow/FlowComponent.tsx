@@ -21,7 +21,7 @@ import VapiPopup from './components/VapiPopup';
 import NodeInfoCardKnowledgeRetrieval from './components/NodeInfoCardKnowledgeRetrieval';
 import NodeInfoCardURL from './components/NodeInfoCardURL';
 import { v4 as uuidv4 } from 'uuid';
-import { useUser } from '@clerk/nextjs';
+import { User } from '@clerk/nextjs/server';
 
 
 interface NodeData {
@@ -50,15 +50,15 @@ const initialEdges: Edge[] = [
 ];
 
 
-export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void; }) {
+export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved, onFlowDeleted, user  }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
   return (
     <ReactFlowProvider>
-      <FlowComponent selectedFlowId={selectedFlowId} onFlowSaved={onFlowSaved} onFlowDeleted={onFlowDeleted} />
+      <FlowComponent selectedFlowId={selectedFlowId} onFlowSaved={onFlowSaved} onFlowDeleted={onFlowDeleted} user={user} />
     </ReactFlowProvider>
   );
 }
 
-function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void; }) {
+function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -68,7 +68,6 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const [lastEditTime, setLastEditTime] = useState<Date | null>(null);
   const { getNodes, getViewport } = useReactFlow();
   const { toast } = useToast();
-  const { user } = useUser();
   const [defaultCall, setDefaultCall] = useState<any>({
     firstMessage: "Hai beb, can I help you today?",
     model: {

@@ -25,11 +25,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useUser } from '@clerk/nextjs';
+import { UserResource } from '@clerk/types';
 
 interface Flow {
   id: string;
   name: string;
   createdAt: string;
+}
+
+interface FlowComponentProps {
+  selectedFlowId: string | null;
+  onFlowSaved: (savedFlow: any) => void;
+  onFlowDeleted: () => void;
+  user: UserResource | null;
 }
 
 export default function FlowPage() {
@@ -100,9 +108,6 @@ export default function FlowPage() {
     }
   }, [fetchFlows]);
 
-  
-
-
   return (
     <div className="p-4 flex h-[89vh]">
       <Card className="w-[15vw] ml-[2vw] mr-2 overflow-hidden shadow-lg">
@@ -170,7 +175,7 @@ export default function FlowPage() {
               if (selectedFlow) {
                 deleteFlow(selectedFlow);
               }
-            }} />
+            }} user={user} />
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send, Fullscreen, Minimize, UserIcon, Eraser } from 'lucide-react';
+import { X, Send, Fullscreen, Minimize, UserIcon, Eraser, BotMessageSquare } from 'lucide-react';
 import { Node, Edge } from '@xyflow/react';
 import {
   Tooltip,
@@ -196,10 +196,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prevMessages => [...prevMessages, userMessage]);
 
-    const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM Chat');
+    const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM With Custom Prompt');
 
     if (llmChatNodes.length === 2) {
-      // Chain two LLM Chat nodes
+      // Chain two LLM With Custom Prompt nodes
       let firstPrompt: any = llmChatNodes[0].data.prompt || '';
       let secondPrompt: any = llmChatNodes[1].data.prompt || '';
 
@@ -219,10 +219,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }
       }
-      console.log('MESSAGES', messages);
+      // console.log('MESSAGES', messages);
 
     } else if (llmChatNodes.length === 1) {
-      // Single LLM Chat node
+      // Single LLM With Custom Prompt node
       const chatNode = llmChatNodes[0];
       const prompt: any = chatNode.data.prompt || '';
       console.log('Prompt:', prompt);
@@ -278,22 +278,22 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={clearChat}>
+                  <Eraser className="h-5 w-5" /> 
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Clear Chat</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
                   {isFullscreen ? <Minimize className="h-5 w-5" /> : <Fullscreen className="h-5 w-5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</p>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" onClick={clearChat}>
-                  <Eraser  className="h-5 w-5" /> 
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Clear Chat</p>
               </TooltipContent>
             </Tooltip>
             {!isFullscreen && (
@@ -315,11 +315,15 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       <ScrollArea className="flex-grow p-4 space-y-4 h-[1vh]">
         {messages.map((m, index) => (
           <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-            <div className={`max-w-[70%] ${m.role === 'user' ? 'bg-[#6c47ff]  text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-3 shadow`}>
-              <div className="flex items-start">
-                {m.role === 'ai' && (
-                  <div className="bg-gray-400 rounded-full p-1 mr-2">
-                    <UserIcon className="w-4 h-4 text-white" />
+            <div className={`max-w-[70%] ${m.role === 'user' ? 'bg-[#6c47ff] text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-3 shadow`}>
+              <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                {m.role === 'user' ? (
+                  <div className="bg-white rounded-full p-1 ml-2">
+                    <UserIcon className="w-4 h-4 text-[#6c47ff]" />
+                  </div>
+                ) : (
+                  <div className="bg-gray-800 rounded-full p-1 mr-2">
+                    <BotMessageSquare className="w-4 h-4 text-white" />
                   </div>
                 )}
                 <div className="break-words">{m.content}</div>
@@ -339,7 +343,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   return (
     <>
       <div 
-        className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(27vw+1rem)]' : 'right-6'} top-40 w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
+        className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(420px+1rem)]' : 'right-6'} top-40 w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
       >
         <ChatContent />
       </div>

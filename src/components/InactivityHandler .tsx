@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 5 minutes in milliseconds
 
 export function InactivityHandler() {
   const { signOut } = useClerk();

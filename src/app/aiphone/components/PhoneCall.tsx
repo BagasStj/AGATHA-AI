@@ -10,6 +10,7 @@ import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone } from 'lucide-react'
 import VapiClient from '@vapi-ai/web';
 
 const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+const VAPI_API_KEY_PRIVATE = process.env.NEXT_PRIVATE_VAPI_PUBLIC_KEY;
 
 export default function PhoneCall() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -49,7 +50,16 @@ export default function PhoneCall() {
     },
   });
 
+  const [knowledgeBase, setKnowledgeBase] = useState<File | null>(null);
+  const [knowledgeBaseName, setKnowledgeBaseName] = useState<string>('');
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setKnowledgeBase(file);
+      setKnowledgeBaseName(file.name);
+    }
+  };
   // In the useEffect hook
   useEffect(() => {
     if (VAPI_API_KEY) {
@@ -60,7 +70,6 @@ export default function PhoneCall() {
 
 
   const startCall = useCallback(async () => {
-
     if (!vapiClient) {
       toast({
         title: "Error",
@@ -70,12 +79,13 @@ export default function PhoneCall() {
       });
       return;
     }
-
+  
     try {
       setIsCallActive(true);
       setCallStatus('Calling...');
-      console.log('GET PARAMS', defaultCall)
-      const call = await vapiClient.start({
+      console.log('GET PARAMS', defaultCall);
+  
+      let callOptions: any = {
         model: {
           provider: defaultCall.model.provider,
           model: defaultCall.model.model,
@@ -91,30 +101,53 @@ export default function PhoneCall() {
           provider: "11labs",
           voiceId: defaultCall.voice.voiceId,
         },
-
-      });
+      };
+  
+      if (knowledgeBase) {
+        const formData = new FormData();
+        formData.append('file', knowledgeBase);
+  
+        const response = await fetch('https://api.vapi.ai/file', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${VAPI_API_KEY}`,
+            'Content-Type': 'multipart/form-data'
+          },
+          body: formData,
+        });
+  
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to upload knowledge base: ${response.status} ${response.statusText}. Error: ${errorText}`);
+        }
+  
+        const data = await response.json();
+        callOptions.knowledgeBaseId = data.id;
+      }
+  
+      const call = await vapiClient.start(callOptions);
       setActiveCall(call);
-
+  
       vapiClient.on('call-start', () => setCallStatus('Ringing...'));
       vapiClient.on('speech-start', () => setCallStatus('Connected'));
       vapiClient.on('call-end', () => {
         setCallStatus('Call ended');
         setIsCallActive(false);
       });
-
+  
       setCallHistory(prev => [...prev, { number: phoneNumber, date: new Date().toLocaleString(), duration: '0:00' }]);
-
+  
     } catch (error) {
       console.error('Error starting call:', error);
       toast({
         title: "Error",
-        description: "Failed to start the call. Please try again.",
+        description: `Failed to start the call: ${error instanceof Error ? error.message : 'Unknown error'}`,
         duration: 3000,
         variant: "destructive",
       });
       setIsCallActive(false);
     }
-  }, [toast, vapiClient, temperature, voiceId, model, language, phoneNumber]);
+  }, [toast, vapiClient, defaultCall, phoneNumber, knowledgeBase]);
 
   const endCall = useCallback(() => {
     if (vapiClient) {
@@ -153,6 +186,21 @@ export default function PhoneCall() {
         </div>
         <div className='flex'>
           <div className="w-[64vw] mr-[1vw]">
+            <div className="mb-4">
+              <label htmlFor="knowledgeBase" className="block text-sm font-medium text-gray-700 mb-1">
+                Knowledge Base
+              </label>
+              <input
+                type="file"
+                id="knowledgeBase"
+                onChange={handleFileUpload}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                disabled={isCallActive}
+              />
+              {knowledgeBaseName && (
+                <p className="mt-1 text-sm text-gray-500">Selected file: {knowledgeBaseName}</p>
+              )}
+            </div>
             <div className="mb-4">
               <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
                 First Message

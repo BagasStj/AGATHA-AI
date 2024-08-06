@@ -27,13 +27,15 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const [title, setTitle] = useState('');
     const [prompt, setPrompt] = useState('');
     const [url, setUrl] = useState('');
-
+    const [description, setDescription] = useState('');
 
 
     useEffect(() => {
         if (node) {
             setTitle(node.data.label);
             setUrl(node.data.url as string);
+            setDescription(node.data.description as string || '' || node.data.nodeType as string);
+
         }
     }, [node]);
 
@@ -43,6 +45,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
         onUpdateNode(node.id, {
             label: title,
             url: url,
+            description: description,
         });
         onClose();
     };
@@ -69,6 +72,15 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                        type="text"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     />
                 </div>

@@ -1,8 +1,10 @@
 import { authMiddleware } from "@clerk/nextjs/server";
 
-export default authMiddleware({
-  // publicRoutes: (req) => !req.url.includes("/dashboard"),
-});
+const middlewareConfig = {
+  publicRoutes: ['/'],
+};
+
+export default authMiddleware({});
 
 export const config = {
   matcher: [

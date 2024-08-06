@@ -40,17 +40,25 @@ const CustomNode = ({ data }: { data: any }) => {
   const isStartOrEnd = data.nodeType === 'Start' || data.nodeType === 'END';
   const isStart = data.nodeType === 'Start';
   const isEnd = data.nodeType === 'END';
-  const nodeWidth = 'w-[20vw]';
+  const nodeWidth = 'w-[24vw]';
 
   return (
     <div className={`px-4 py-2 shadow-lg rounded-3xl bg-white  ${nodeWidth}`}>
-      <div className="flex items-center h-[9vh] ">
-        <div className={`w-11 h-11 rounded-full ${getNodeColor(data.nodeType)} flex items-center justify-center mr-2 shadow-md`}>
-          {getNodeIcon(data.nodeType)}
+      <div className="flex items-center min-h-[9vh] my-1">
+        <div>
+
+          <div className={`w-11 h-11 rounded-full ${getNodeColor(data.nodeType)} flex items-center justify-center mr-2 shadow-md`}>
+            {getNodeIcon(data.nodeType)}
+          </div>
         </div>
-        <div className="ml-2">
+        <div className="ml-2 flex-grow">
           <div className="text-xl font-bold">{data.label}</div>
-          {!isStartOrEnd && <div className="text-gray-500">{data.nodeType}</div>}
+          {!isStartOrEnd && <div className="text-gray-500">{data.description || data.nodeType}</div>}
+          {data.content && (
+            <div className="mt-2 text-sm text-gray-600 break-words">
+              {data.content}
+            </div>
+          )}
         </div>
       </div>
 

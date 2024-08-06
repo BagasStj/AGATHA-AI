@@ -33,6 +33,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const [presencePenalty, setPresencePenalty] = useState(0);
     const [frequencyPenalty, setFrequencyPenalty] = useState(0);
     const [maxTokens, setMaxTokens] = useState(2048);
+    const [description, setDescription] = useState('');
 
     useEffect(() => {
         if (node) {
@@ -45,6 +46,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
             setPresencePenalty(node.data.presencePenalty ?? 0);
             setFrequencyPenalty(node.data.frequencyPenalty ?? 0);
             setMaxTokens(node.data.maxTokens ?? 2048);
+            setDescription(node.data.description as string || node.data.nodeType as string);
         }
     }, [node]);
 
@@ -61,6 +63,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
             presencePenalty,
             frequencyPenalty,
             maxTokens,
+            description: description
         });
         onClose();
     };
@@ -90,7 +93,16 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     />
                 </div>
-                {node.data.nodeType === 'LLM Chat' ? (
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                        type="text"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                    />
+                </div>
+                {node.data.nodeType === 'LLM With Custom Prompt' ? (
                     <>
                         {/* <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>

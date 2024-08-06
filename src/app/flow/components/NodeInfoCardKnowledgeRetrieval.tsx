@@ -24,7 +24,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [fileName, setFileName] = useState<string | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
-
+    const [description, setDescription] = useState('');
     useEffect(() => {
         if (node) {
             setTitle(node.data.label || '');
@@ -32,6 +32,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             if (node.data.file instanceof File) {
                 setFile(node.data.file);
             }
+            setDescription(node.data.description as string || node.data.nodeType as string);
+
         }
     }, [node]);
 
@@ -77,6 +79,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             label: title,
             pdfFile: file,
             fileName: fileName,
+            description: description,
         });
         try {
             await fetchUpserrt();
@@ -85,6 +88,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             console.error('Error in fetchUpserrt:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
+            onClose();
             setIsLoading(false);
         }
     };
@@ -140,6 +144,15 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                         className="w-full"
                     />
                 </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <input
+                        type="text"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
+                    />
+                </div>
                 <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -159,7 +172,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                         Drag and drop your file here, or click to select
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
-                        Supported formats: PDF, CSV, JSON
+                        Supported formats: PDF, CSV
                     </p>
                     <Button
                         onClick={() => fileInputRef.current?.click()}

@@ -54,6 +54,8 @@ datasource db {
 model Flow {
   id    String @id @default(cuid())
   name  String
+  userId String
+  userName String
   nodes String
   edges String
   createdAt DateTime @default(now())

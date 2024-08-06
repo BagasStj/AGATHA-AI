@@ -4,7 +4,16 @@ import { prisma } from '@/lib/prisma';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
     try {
+      const { username } = req.query;
+      
+      if (!username) {
+        return res.status(400).json({ message: 'Username is required' });
+      }
+
       const flows = await prisma.flow.findMany({
+        where: {
+          userName: username as string,
+        },
         select: {
           id: true,
           name: true,
@@ -19,14 +28,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error('Error fetching flows:', error);
       res.status(500).json({ message: 'Error fetching flows' });
     }
-  } else if (req.method === 'POST') {
+  }  else if (req.method === 'POST') {
     try {
-      const { name, nodes, edges } = req.body;
+      const { name, nodes, edges, userId, userName } = req.body;
       const flow = await prisma.flow.create({
         data: {
           name,
           nodes: JSON.stringify(nodes),
           edges: JSON.stringify(edges),
+          userId: userId as any,
+          userName: userName as string,
         },
       });
       res.status(201).json(flow);

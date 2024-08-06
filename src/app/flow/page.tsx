@@ -24,6 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useUser } from '@clerk/nextjs';
 
 interface Flow {
   id: string;
@@ -35,11 +36,14 @@ export default function FlowPage() {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [selectedFlow, setSelectedFlow] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { user } = useUser();
+
 
   useEffect(() => {
     async function fetchFlows() {
+      if (!user) return;
       try {
-        const response = await fetch('/api/flows');
+        const response = await fetch(`/api/flows?username=${user.username}`);
         if (!response.ok) {
           throw new Error('Failed to fetch flows');
         }
@@ -51,7 +55,7 @@ export default function FlowPage() {
     }
 
     fetchFlows();
-  }, []);
+  }, [user]);
 
   const deleteFlow = async (id: string) => {
     try {
@@ -71,8 +75,9 @@ export default function FlowPage() {
     }
   };
   const fetchFlows = useCallback(async () => {
+    if (!user) return;
     try {
-      const response = await fetch('/api/flows');
+      const response = await fetch(`/api/flows?username=${user.username}`);
       if (!response.ok) {
         throw new Error('Failed to fetch flows');
       }
@@ -81,7 +86,7 @@ export default function FlowPage() {
     } catch (error) {
       console.error('Error fetching flows:', error);
     }
-  }, []);
+  }, [user]);
 
   const filteredFlows = flows.filter(flow =>
     flow.name.toLowerCase().includes(searchTerm.toLowerCase())

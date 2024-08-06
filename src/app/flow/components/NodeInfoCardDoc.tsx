@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Save } from 'lucide-react';
+import { Brain, Save } from 'lucide-react';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -63,13 +63,18 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
 
     return (
         <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 flex flex-col max-h-[calc(100vh-6rem)]">
-            <div className="p-6">
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center">
+                    <div className="bg-purple-500 rounded-full p-1 mr-2">
+                        <Brain className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-800 mr-2">LLM By Knowledge</h3>
+                </div>
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                <h3 className="text-xl font-bold text-gray-800">Set AI PDF</h3>
             </div>
             <div className="px-6 pb-4 space-y-4 overflow-y-auto flex-grow h-[49vh]">
                 <div>

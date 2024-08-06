@@ -12,7 +12,7 @@ const getNodeIcon = (type: string) => {
       return <Phone className="w-6 h-6 text-white" />;
     case 'Knowledge Document':
       return <ScrollText className="w-6 h-6 text-white" />;
-    case 'knowledge_url':
+    case 'Knowledge URL':
       return <Link className="w-6 h-6 text-white" />;
     default:
       return <Brain className="w-6 h-6 text-white" />;
@@ -29,7 +29,7 @@ const getNodeColor = (type: string) => {
       return 'bg-green-500';
     case 'Knowledge Document':
       return 'bg-[#ff47bf]';
-    case 'knowledge_url':
+    case 'Knowledge URL':
       return 'bg-[#ff47bf]';
     default:
       return 'bg-purple-500';

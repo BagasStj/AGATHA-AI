@@ -19,6 +19,7 @@ import VapiClient from '@vapi-ai/web';
 import NodeInfoCardDoc from './components/NodeInfoCardDoc';
 import VapiPopup from './components/VapiPopup';
 import NodeInfoCardKnowledgeRetrieval from './components/NodeInfoCardKnowledgeRetrieval';
+import NodeInfoCardURL from './components/NodeInfoCardURL';
 
 
 interface NodeData {
@@ -370,10 +371,27 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
     const knowledgeDocumentNode = nodes.find(node => node.data.nodeType === "Knowledge Document");
     const vapiNode = nodes.find(node => node.data.nodeType === 'vapi');
+    const knowledgeURLNode = nodes.find(node => node.data.nodeType === "Knowledge URL");
+    console.log('NODES', knowledgeURLNode);
+
     
+    if (knowledgeURLNode) {
+      if (!knowledgeURLNode.data.url) {
+        toast({
+          title: "Error",
+          description: "Please input a URL",
+          variant: "destructive",
+        });
+        setSelectedNode(knowledgeURLNode);
+        return;
+      }
+      setShowChatDialog(true);
+      return;
+    }
+
+
     if (knowledgeDocumentNode) {
-      console.log('NODES', knowledgeDocumentNode);
-      if ( !knowledgeDocumentNode.data.fileName) {
+      if (!knowledgeDocumentNode.data.fileName) {
         toast({
           title: "Error",
           description: "Please upload a document before running.",
@@ -491,7 +509,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           bgColor: 'bg-purple-500',
         },
         {
-          type: 'LLM By Document', label: 'LLM By Document', icon: Brain,
+          type: 'LLM By Knowledge', label: 'LLM By Knowledge', icon: Brain,
           bgColor: 'bg-purple-500',
         },
       ]
@@ -507,7 +525,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           bgColor: 'bg-[#ff47bf]',
         },
         {
-          type: 'knowledge_url', label: 'url', icon: Link,
+          type: 'Knowledge URL', label: 'URL', icon: Link,
           bgColor: 'bg-[#ff47bf]',
         },
       ]
@@ -588,13 +606,13 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                       </DropdownMenuTrigger>
                       <DropdownMenuContent side="right" alignOffset={-5} className="ml-2">
                         {nodeType.subMenu!.map((subItem) => (
-                  
-                           <DropdownMenuItem key={subItem.type} onSelect={() => onAddNode(subItem.type)} className="flex items-center">
-                           <div className={`w-6 h-6 rounded-full ${subItem.bgColor} flex items-center justify-center mr-2`}>
-                             <subItem.icon className="w-4 h-4 text-white" />
-                           </div>
-                           {subItem.label}
-                         </DropdownMenuItem>
+
+                          <DropdownMenuItem key={subItem.type} onSelect={() => onAddNode(subItem.type)} className="flex items-center">
+                            <div className={`w-6 h-6 rounded-full ${subItem.bgColor} flex items-center justify-center mr-2`}>
+                              <subItem.icon className="w-4 h-4 text-white" />
+                            </div>
+                            {subItem.label}
+                          </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -613,7 +631,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <div
                 title='Remove Node'
                 onClick={() => onRemoveNode(selectedNode.id)}
-                className="absolute top-[20vh] left-[1vw]  z-[4] bg-red-600 h-[5vh] w-[2.3vw] flex justify-center items-center text-white hover:bg-red-500 rounded-full"
+                className="absolute top-[20vh] left-[1vw] z-[4] bg-red-600 h-[5vh] w-[2.3vw] flex justify-center items-center text-white hover:bg-red-500 rounded-full cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-110 hover:rotate-12 animate-fadeIn"
               >
                 <Trash2 className="h-4 w-4" />
               </div>
@@ -645,7 +663,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                   onClose={closeNodeInfo}
                   onUpdateNode={onUpdateNodevapi}
                 />
-              ) : selectedNode.data.nodeType === 'LLM By Document' ? (
+              ) : selectedNode.data.nodeType === 'LLM By Knowledge' ? (
                 <NodeInfoCardDoc
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
                   onClose={closeNodeInfo}
@@ -653,6 +671,12 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 />
               ) : selectedNode.data.nodeType === 'Knowledge Document' ? (
                 <NodeInfoCardKnowledgeRetrieval
+                  node={selectedNode as Node<NodeData & Record<string, unknown>>}
+                  onClose={closeNodeInfo}
+                  onUpdateNode={onUpdateNode}
+                />
+              ) : selectedNode.data.nodeType === 'Knowledge URL' ? (
+                <NodeInfoCardURL
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
                   onClose={closeNodeInfo}
                   onUpdateNode={onUpdateNode}
@@ -671,7 +695,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 selectedNode={selectedNode}
                 nodes={nodes}
                 edges={edges}
-                isNodeInfoCardOpen={!!selectedNode  && !['Start', 'END'].includes(selectedNode.data.nodeType as string)}
+                isNodeInfoCardOpen={!!selectedNode && !['Start', 'END'].includes(selectedNode.data.nodeType as string)}
               />
             )}
             {showVapiPopup && (

@@ -74,38 +74,56 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // LLM By Document https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
+  // LLM By Knowledge https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
   const fetchChatResponsePdf = async (input: string) => {
     try {
-      const pdfNode = nodes.find(node => node.data.nodeType === 'LLM By Document');
-      const pdfNodeDOC = nodes.find(node => node.data.nodeType === 'Knowledge Document');
-      if (!pdfNode || !pdfNodeDOC || !pdfNodeDOC.data.pdfFile) {
-        throw new Error('PDF file not found');
+      const pdfNode = nodes.find(node => node.data.nodeType === 'LLM By Knowledge');
+      const knowledgeNode = nodes.find(node => node.data.nodeType === 'Knowledge Document' || node.data.nodeType === 'Knowledge URL');
+      
+      if (!pdfNode || !knowledgeNode) {
+        throw new Error('Required nodes not found');
       }
+  
       let formData = new FormData();
-      if (pdfNodeDOC.data.pdfFile instanceof Blob) {
-        formData.append("files", pdfNodeDOC.data.pdfFile);
-      } else {
-        console.error('PDF file is not a Blob');
-        throw new Error('Invalid PDF file');
+    
+  
+      if (knowledgeNode.data.nodeType === 'Knowledge Document') {
+        if (!knowledgeNode.data.pdfFile || !(knowledgeNode.data.pdfFile instanceof Blob)) {
+          throw new Error('Invalid PDF file');
+        }
+        formData.append("files", knowledgeNode.data.pdfFile);
+        formData.append("tableName","documents");
+        formData.append("queryName","match_documents" );
+        // formData.append("chunkSize", pdfNode.data.chunkSize?.toString() ?? '100');
+        // formData.append("chunkOverlap", pdfNode.data.chunkOverlap?.toString() ?? '');
+        // formData.append("topK", pdfNode.data.topK?.toString() ?? '');
+        formData.append("question", input);
+      } else if (knowledgeNode.data.nodeType === 'Knowledge URL') {
+        const url = knowledgeNode.data.url as string;
+        if (typeof url === 'string' && url.includes('github.com')) {
+          formData.append("repoLink", url);
+          formData.append("branch", "main"); // Assuming 'main' as default branch
+        } else if (typeof url === 'string') {
+          formData.append("url", url);
+          formData.append("limit", "1");
+          formData.append("relativeLinksMethod", url);
+        }
       }
-      formData.append("chunkSize", pdfNode.data.chunkSize?.toString() ?? '');
-      formData.append("chunkOverlap", pdfNode.data.chunkOverlap?.toString() ?? '');
-      formData.append("topK", pdfNode.data.topK?.toString() ?? '');
-      formData.append("question", input);
-
+  
+      // local https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/ff27c827-b648-4e91-a660-7f1d6cb97468
+      // prod https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/77afa50f-613d-417f-8bb1-4cd9cca1a3e0
       const response = await fetch(
-        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/bc112d02-d1c5-4f58-93f3-7025924bce77",
+        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/77afa50f-613d-417f-8bb1-4cd9cca1a3e0",
         {
           method: "POST",
           body: formData
         }
       );
-
+  
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-
+  
       const data = await response.json();
       console.log('API Response:', data);
       return data;
@@ -219,7 +237,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       }
       console.log('MESSAGES', messages);
 
-    } else if (nodes.find(node => node.data.nodeType === 'LLM By Document')) {
+    } else if (nodes.find(node => node.data.nodeType === 'LLM By Knowledge')) {
       const response = await fetchChatResponsePdf(input);
       if (response) {
         const assistantMessage = {

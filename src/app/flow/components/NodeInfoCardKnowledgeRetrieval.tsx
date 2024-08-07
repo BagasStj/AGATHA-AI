@@ -3,6 +3,7 @@ import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, ScrollText, Upload } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -25,6 +26,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     const [fileName, setFileName] = useState<string | undefined>(undefined);
     const [isLoading, setIsLoading] = useState(false);
     const [description, setDescription] = useState('');
+    const { user } = useUser();
+
     useEffect(() => {
         if (node) {
             setTitle(node.data.label || '');
@@ -41,15 +44,15 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     if (!node) return null;
     let formData = new FormData();
 
-    // prod https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/77afa50f-613d-417f-8bb1-4cd9cca1a3e0
-    // local https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/ff27c827-b648-4e91-a660-7f1d6cb97468
+
     const fetchUpserrt = async () => { //upsertfile
-        if (file) {
+        if (file && user) {
             formData.append("files", file);
             formData.append("legacyBuild", 'true')
+            formData.append("pineconeIndex", `flowise-ai-${user.username}`)
         }
         try {
-            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/77afa50f-613d-417f-8bb1-4cd9cca1a3e0', {
+            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/5915e20a-62dd-468b-81b7-41bd6f7f915d', {
                 method: 'POST',
                 body: formData
             });
@@ -70,35 +73,54 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     };
 
     const handleSave = async () => {
-        if (!fileName || !file) {
+        if (!fileName || !file || !user) {
             alert('Please upload a file before saving.');
             return;
         }
         setIsLoading(true);
-        onUpdateNode(node.id, {
-            label: title,
-            pdfFile: file,
-            fileName: fileName,
-            description: description,
-        });
         try {
-            await fetchUpserrt();
-            onClose();
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const base64File = e.target?.result as string;
+                const response = await fetch('/api/save-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        fileName,
+                        userId: user.id,
+                        file: base64File,
+                        userName: user.username
+                    }),
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to save file data');
+                }
+                await fetchUpserrt();
+                onUpdateNode(node.id, {
+                    label: title,
+                    pdfFile: file,
+                    fileName: fileName,
+                    description: description,
+                });
+            };
+            reader.readAsDataURL(file);
         } catch (error) {
-            console.error('Error in fetchUpserrt:', error);
+            console.error('Error in handleSave:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
-            onClose();
             setIsLoading(false);
+            onClose();
         }
     };
     const handleFileUpload = (uploadedFile: File) => {
-        const allowedTypes = ['application/pdf', 'text/csv', 'application/json'];
+        const allowedTypes = ['application/pdf', 'text/csv', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
         if (allowedTypes.includes(uploadedFile.type)) {
             setFile(uploadedFile);
             setFileName(uploadedFile.name);
         } else {
-            alert('Please upload a PDF, CSV, or JSON file');
+            alert('Please upload a PDF, CSV, or DOCX file');
         }
     };
 
@@ -162,7 +184,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 >
                     <input
                         type="file"
-                        accept=".pdf,.csv,.json"
+                        accept=".pdf,.csv,.docx"
                         onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
                         className="hidden"
                         ref={fileInputRef}
@@ -172,7 +194,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                         Drag and drop your file here, or click to select
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
-                        Supported formats: PDF, CSV
+                        Supported formats: PDF, CSV , DOCX
                     </p>
                     <Button
                         onClick={() => fileInputRef.current?.click()}

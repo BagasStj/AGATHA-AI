@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText, FileSearch } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
@@ -23,7 +23,7 @@ import NodeInfoCardURL from './components/NodeInfoCardURL';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '@clerk/nextjs/server';
 import { useHotkeys } from 'react-hotkeys-hook';
-
+import DocumentViewPopup from './components/DocumentViewPopup';
 
 interface NodeData {
   label: string;
@@ -51,7 +51,7 @@ const initialEdges: Edge[] = [
 ];
 
 
-export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved, onFlowDeleted, user  }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
+export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
   return (
     <ReactFlowProvider>
       <FlowComponent selectedFlowId={selectedFlowId} onFlowSaved={onFlowSaved} onFlowDeleted={onFlowDeleted} user={user} />
@@ -91,7 +91,39 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
   const [vapiClient, setVapiClient] = useState<VapiClient | null>(null);
   const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
   const [showVapiPopup, setShowVapiPopup] = useState(false);
+  const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
+  const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
 
+
+  const onViewDocument = useCallback(() => {
+    // This is a mock function. In a real application, you would fetch the documents from your backend.
+    if (user) {
+      fetchDocuments();
+    }
+    setIsDocumentViewOpen(true);
+  }, []);
+
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`/api/get-documents?userId=${user?.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      const data = await response.json();
+      setDocuments(data.map((doc: any) => ({
+        id: doc.id,
+        name: doc.fileName,
+        created: format(new Date(doc.created), 'yyyy-MM-dd')
+      })));
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
 
   const onConnect = useCallback(
@@ -154,7 +186,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
       setEdges([]);
       setCurrentFlowId(null);
     }
-  }, [selectedFlowId, loadFlow, onFlowDeleted]);
+    // if (user) {
+    //   fetchDocuments();
+    // }
+  }, [selectedFlowId, loadFlow, onFlowDeleted, user]);
+
 
 
 
@@ -266,13 +302,13 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
 
   useHotkeys('delete', onDeleteSelectedNode, [onDeleteSelectedNode]);
 
-  
+
 
   const onSaveAs = useCallback(async () => {
     try {
       const flowName = prompt("Enter a name for this flow:");
       if (!flowName) return;
-  
+
       const response = await fetch('/api/flows', {
         method: 'POST',
         headers: {
@@ -280,27 +316,27 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
         },
         body: JSON.stringify({ name: flowName, nodes, edges, userId: user?.id, userName: user?.username }),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(`Failed to save flow: ${errorData.message}`);
       }
-  
+
       const savedFlow = await response.json();
       onFlowSaved(savedFlow);
-      
+
       toast({
         title: "Success",
         description: `Flow "${savedFlow.name}" saved successfully`,
         duration: 3000,
         className: "bg-green-100 border-green-400 text-green-700",
       });
-  
+
       // Update URL and load the new flow
       if (typeof window !== 'undefined') {
         window.history.pushState({}, '', `/flow/${savedFlow.id}`);
       }
-      
+
       // Load the newly saved flow
       await loadFlow(savedFlow.id);
       selectedFlowId = savedFlow.id;
@@ -395,7 +431,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
     const knowledgeURLNode = nodes.find(node => node.data.nodeType === "Knowledge URL");
     // console.log('NODES', knowledgeURLNode ,nodes );
 
-    
+
     if (knowledgeURLNode) {
       if (!knowledgeURLNode.data.url) {
         toast({
@@ -594,6 +630,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
               <Button onClick={onCreateNewFlow} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Create New Flow">
                 <FilePlus className="h-5 w-5" />
               </Button>
+              {nodes.find(node => node.data.nodeType === "Knowledge Document") && (
+                <Button onClick={onViewDocument} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff] text-black hover:text-white" title="View Document">
+                  <FileSearch className="h-5 w-5" />
+                </Button>
+              )}
               <Button onClick={onSave} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Save">
                 <Save className="h-5 w-5" />
               </Button>
@@ -727,7 +768,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
               <VapiPopup onDisconnect={handleVapiDisconnect} />
             )}
           </div>
-
+          <DocumentViewPopup
+            isOpen={isDocumentViewOpen}
+            onClose={() => setIsDocumentViewOpen(false)}
+            documents={documents}
+          />
         </CardContent>
       </Card>
 

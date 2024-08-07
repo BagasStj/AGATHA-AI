@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogContentChat,
 } from "@/components/ui/dialog";
+import { useUser } from '@clerk/nextjs';
 
 interface ChatDialogProps {
   onClose: () => void;
@@ -34,6 +35,7 @@ const LoadingIndicator = () => (
 
 const MessageInput = ({ onSend }: { onSend: (message: string) => void }) => {
   const [input, setInput] = useState('');
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +67,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { user } = useUser();
+
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -77,56 +81,74 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   // LLM By Knowledge https://flowiseai-railway-production-9629.up.railway.app/canvas/aeccfeee-a1c8-479e-9497-d31b690558d5
   const fetchChatResponsePdf = async (input: string) => {
     try {
+      if (!user) return;
       const pdfNode = nodes.find(node => node.data.nodeType === 'LLM By Knowledge');
       const knowledgeNode = nodes.find(node => node.data.nodeType === 'Knowledge Document' || node.data.nodeType === 'Knowledge URL');
-      
+
       if (!pdfNode || !knowledgeNode) {
         throw new Error('Required nodes not found');
       }
-  
+
       let formData = new FormData();
-    
-  
+
+
       if (knowledgeNode.data.nodeType === 'Knowledge Document') {
         if (!knowledgeNode.data.pdfFile || !(knowledgeNode.data.pdfFile instanceof Blob)) {
           throw new Error('Invalid PDF file');
         }
         formData.append("files", knowledgeNode.data.pdfFile);
-        formData.append("tableName","documents");
-        formData.append("queryName","match_documents" );
-        // formData.append("chunkSize", pdfNode.data.chunkSize?.toString() ?? '100');
-        // formData.append("chunkOverlap", pdfNode.data.chunkOverlap?.toString() ?? '');
-        // formData.append("topK", pdfNode.data.topK?.toString() ?? '');
+        formData.append("tableName", "documents");
+        formData.append("queryName", "match_documents");
+        formData.append("pineconeIndex", `flowise-ai-${user.username}`);
+
         formData.append("question", input);
+
+        const response = await fetch(
+          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/5915e20a-62dd-468b-81b7-41bd6f7f915d",
+          {
+            method: "POST",
+            body: formData
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+        return data;
       } else if (knowledgeNode.data.nodeType === 'Knowledge URL') {
+
         const url = knowledgeNode.data.url as string;
-        if (typeof url === 'string' && url.includes('github.com')) {
-          formData.append("repoLink", url);
-          formData.append("branch", "main"); // Assuming 'main' as default branch
-        } else if (typeof url === 'string') {
-          formData.append("url", url);
-          formData.append("limit", "1");
-          formData.append("relativeLinksMethod", url);
+
+        const response = await fetch(
+          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/26831c4f-6d3d-4980-aa72-f613c2b853da",
+          {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              question: input,
+              overrideConfig: {
+                repoLink: url,
+                pineconeIndex: `flowise-ai-${user.username}`
+              }
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
         }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+        return data;
       }
-  
-      // local https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/ff27c827-b648-4e91-a660-7f1d6cb97468
-      // prod https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/77afa50f-613d-417f-8bb1-4cd9cca1a3e0
-      const response = await fetch(
-        "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/77afa50f-613d-417f-8bb1-4cd9cca1a3e0",
-        {
-          method: "POST",
-          body: formData
-        }
-      );
-  
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-  
-      const data = await response.json();
-      console.log('API Response:', data);
-      return data;
+
+
     } catch (error) {
       console.error('Error fetching chat response:', error);
       return null;
@@ -162,10 +184,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     }
   };
 
-  // GENERAL CHAT WITH PROMPT https://flowiseai-railway-production-9629.up.railway.app/canvas/05cd0bdc-93b0-46a7-991b-36c8c543958d
+  // GENERAL CHAT WITH PROMPThttps://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/2f25175a-5c6f-474a-918a-84ae054a92d8
   const fetchChatResponseChat = async (input: string, prompt: string) => {
     try {
-      const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/05cd0bdc-93b0-46a7-991b-36c8c543958d', {
+      const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/2f25175a-5c6f-474a-918a-84ae054a92d8', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,13 +284,13 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     setIsLoading(false);
   }, [nodes, edges, selectedNode]);
 
-    const toggleFullscreen = useCallback(() => {
-      setIsFullscreen(prev => !prev);
-    }, []);
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
 
-    const clearChat = useCallback(() => {
-      setMessages([]);
-    }, []);
+  const clearChat = useCallback(() => {
+    setMessages([]);
+  }, []);
 
   const ChatContent = () => (
     <div className="flex flex-col h-full">
@@ -279,7 +301,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={clearChat}>
-                  <Eraser className="h-5 w-5" /> 
+                  <Eraser className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -311,7 +333,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
           </TooltipProvider>
         </div>
       </div>
-      
+
       <ScrollArea className="flex-grow p-4 space-y-4 h-[1vh]">
         {messages.map((m, index) => (
           <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -335,14 +357,14 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       </ScrollArea>
 
       {isLoading && <LoadingIndicator />}
-      
+
       <MessageInput onSend={handleSend} />
     </div>
   );
 
   return (
     <>
-      <div 
+      <div
         className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(420px+1rem)]' : 'right-6'} top-40 w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
       >
         <ChatContent />

@@ -4,7 +4,9 @@ const middlewareConfig = {
   publicRoutes: ['/'],
 };
 
-export default authMiddleware({});
+export default authMiddleware({
+  // debug: true
+});
 
 export const config = {
   matcher: [
@@ -13,4 +15,5 @@ export const config = {
     // Always run for API routes
     '/(api|trpc)(.*)',
   ],
+  ignoredRoutes: ["/((?!api|trpc))(_next.*|.+\.[\w]+$)", "/"]
 };

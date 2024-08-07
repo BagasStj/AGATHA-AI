@@ -3,6 +3,7 @@ import { Node } from '@xyflow/react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Brain, Link, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@clerk/nextjs';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -28,6 +29,9 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const [prompt, setPrompt] = useState('');
     const [url, setUrl] = useState('');
     const [description, setDescription] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
+    const { user } = useUser();
 
 
     useEffect(() => {
@@ -41,13 +45,57 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
 
     if (!node) return null;
 
-    const handleSave = () => {
-        onUpdateNode(node.id, {
+    const handleSave = async () => {
+        setIsLoading(true);
+        onUpdateNode(node.id, { 
             label: title,
             url: url,
             description: description,
         });
-        onClose();
+        try {
+            await fetchUpserrt();
+            onClose();
+        } catch (error) {
+            console.error('Error in fetchUpserrt:', error);
+            // You can add a toast notification here to inform the user about the error
+        } finally {
+            setIsLoading(false);
+            onClose();
+        }
+    };
+    let formData = new FormData();
+
+
+    const fetchUpserrt = async () => { //upsertfile
+        if ( !user) {return}
+        try {
+            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/26831c4f-6d3d-4980-aa72-f613c2b853da', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    overrideConfig: {
+                        pineconeIndex: `flowise-ai-${user.username}`,
+                        repoLink: url
+                    },
+         
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Network response was not ok: ${response.status} ${response.statusText}. Error: ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('API Response:', data);
+            return data;
+        } catch (error) {
+            console.error('Error in fetchUpserrt:', error);
+            // You can add a toast notification here to inform the user about the error
+            return null;
+        }
     };
 
     return (
@@ -89,7 +137,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                     <div>
                         <div className='flex items-center'>
                         <label className="block text-sm font-medium text-gray-700 mb-1">URLS</label>
-                        <label className="block text-sm font-medium text-gray-500 ml-2  mb-1 italic">* from web / github</label>
+                        <label className="block text-sm font-medium text-gray-500 ml-2  mb-1 italic">* from github</label>
                         </div>
                         <div className="flex items-center">
                             <input
@@ -108,9 +156,19 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
                 <Button
                     onClick={handleSave}
                     className="w-full bg-[#6c47ff] flex items-center justify-center"
+                    disabled={isLoading}
                 >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save
+                    {isLoading ? (
+                        <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Saving...
+                        </div>
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Save
+                        </>
+                    )}
                 </Button>
             </div>
         </div>

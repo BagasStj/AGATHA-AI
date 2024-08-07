@@ -27,6 +27,7 @@ import {
 import { useUser } from '@clerk/nextjs';
 import { UserResource } from '@clerk/types';
 
+
 interface Flow {
   id: string;
   name: string;
@@ -45,18 +46,32 @@ export default function FlowPage() {
   const [selectedFlow, setSelectedFlow] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { user } = useUser();
-
+  
 
   useEffect(() => {
     async function fetchFlows() {
       if (!user) return;
       try {
-        const response = await fetch(`/api/flows?username=${user.username}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch flows');
+        const [flowsResponse, indexesResponse] = await Promise.all([
+          fetch(`/api/flows?username=${user.username}`),
+          fetch('/api/pinecone')
+        ]);
+        if (!flowsResponse.ok || !indexesResponse.ok) {
+          throw new Error('Failed to fetch data');
         }
-        const data = await response.json();
-        setFlows(data);
+
+        const flowsData = await flowsResponse.json();
+        const indexesData = await indexesResponse.json();
+
+        setFlows(flowsData);
+
+        console.log('[indexes]', indexesData);
+
+        const userIndexName = `flowise-ai-${user.username}`;
+        const userIndexExists = indexesData.indexes.some((index: any) => index.name === userIndexName);
+        if (!userIndexExists) {
+          createIndex(userIndexName);
+        }
       } catch (error) {
         console.error('Error fetching flows:', error);
       }
@@ -64,6 +79,40 @@ export default function FlowPage() {
 
     fetchFlows();
   }, [user]);
+
+  const createIndex = async (userIndexName: string) => {
+    // Create a new index for the user
+    try {
+      const createIndexResponse = await fetch('/api/pinecone/create-index', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          indexName: userIndexName,
+          dimension: 1536,
+          metric: 'cosine',
+          spec: {
+            serverless: {
+              cloud: 'aws',
+              region: 'us-east-1'
+            }
+          }
+        }),
+      });
+
+      if (!createIndexResponse.ok) {
+        const errorData = await createIndexResponse.json();
+        throw new Error(`Failed to create Pinecone index: ${errorData.message || 'Unknown error'}`);
+      }
+
+      console.log(`Created new Pinecone index: ${userIndexName}`);
+    } catch (error) {
+      console.error('Error creating Pinecone index:', error);
+      // You might want to show an error message to the user here
+    }
+
+  }
 
   const deleteFlow = async (id: string) => {
     try {

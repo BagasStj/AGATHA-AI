@@ -9,8 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone } from 'lucide-react';
 import VapiClient from '@vapi-ai/web';
 
-const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-const VAPI_API_KEY_PRIVATE = process.env.NEXT_PRIVATE_VAPI_PUBLIC_KEY;
+const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 
 export default function PhoneCall() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -62,8 +61,8 @@ export default function PhoneCall() {
   };
   // In the useEffect hook
   useEffect(() => {
-    if (VAPI_API_KEY) {
-      const client = new VapiClient(VAPI_API_KEY);
+    if (VAPI_PUBLIC_KEY) {
+      const client = new VapiClient(VAPI_PUBLIC_KEY);
       setVapiClient(client);
     }
   }, []);
@@ -110,8 +109,7 @@ export default function PhoneCall() {
         const response = await fetch('https://api.vapi.ai/file', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${VAPI_API_KEY}`,
-            'Content-Type': 'multipart/form-data'
+            'Authorization': `Bearer ${VAPI_PUBLIC_KEY}`,
           },
           body: formData,
         });

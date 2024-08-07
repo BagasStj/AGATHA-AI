@@ -22,6 +22,7 @@ import NodeInfoCardKnowledgeRetrieval from './components/NodeInfoCardKnowledgeRe
 import NodeInfoCardURL from './components/NodeInfoCardURL';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '@clerk/nextjs/server';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 
 interface NodeData {
@@ -257,6 +258,16 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
     setSelectedNode(null);
   }, []);
 
+  const onDeleteSelectedNode = useCallback(() => {
+    if (selectedNode) {
+      onRemoveNode(selectedNode.id);
+    }
+  }, [selectedNode, onRemoveNode]);
+
+  useHotkeys('delete', onDeleteSelectedNode, [onDeleteSelectedNode]);
+
+  
+
   const onSaveAs = useCallback(async () => {
     try {
       const flowName = prompt("Enter a name for this flow:");
@@ -276,13 +287,23 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
       }
   
       const savedFlow = await response.json();
+      onFlowSaved(savedFlow);
+      
       toast({
         title: "Success",
-        description: `Flow updated successfully`,
+        description: `Flow "${savedFlow.name}" saved successfully`,
         duration: 3000,
         className: "bg-green-100 border-green-400 text-green-700",
       });
-      // ... (rest of the function remains unchanged)
+  
+      // Update URL and load the new flow
+      if (typeof window !== 'undefined') {
+        window.history.pushState({}, '', `/flow/${savedFlow.id}`);
+      }
+      
+      // Load the newly saved flow
+      await loadFlow(savedFlow.id);
+      selectedFlowId = savedFlow.id;
     } catch (error) {
       console.error('Error saving flow:', error);
       toast({
@@ -291,7 +312,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
         variant: "destructive",
       });
     }
-  }, [nodes, edges, toast, onFlowSaved, user]);
+  }, [nodes, edges, toast, onFlowSaved, user, loadFlow]);
 
   const onSave = useCallback(async () => {
     if (!currentFlowId) {

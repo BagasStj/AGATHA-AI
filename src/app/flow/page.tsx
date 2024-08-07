@@ -103,7 +103,19 @@ export default function FlowPage() {
     if (savedFlow === null) {
       setSelectedFlow(null);
     } else {
-      setFlows((prevFlows) => [...prevFlows, savedFlow]);
+      setFlows((prevFlows) => {
+        const existingFlowIndex = prevFlows.findIndex(flow => flow.id === savedFlow.id);
+        if (existingFlowIndex !== -1) {
+          // Update existing flow
+          const updatedFlows = [...prevFlows];
+          updatedFlows[existingFlowIndex] = savedFlow;
+          return updatedFlows;
+        } else {
+          // Add new flow
+          return [...prevFlows, savedFlow];
+        }
+      });
+      setSelectedFlow(savedFlow.id);
       fetchFlows(); // Re-fetch all flows after saving
     }
   }, [fetchFlows]);

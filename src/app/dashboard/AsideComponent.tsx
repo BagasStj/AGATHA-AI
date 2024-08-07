@@ -37,7 +37,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
           <Link
             href="#"
             onClick={() => onViewChange('chat-flowise')}
-            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'chat-flowise' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+            className={`group hidden h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'chat-flowise' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
           >
             <MessageCircle className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">AI Chat Flowise</span>
@@ -50,7 +50,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
           <Link
             href="#"
             onClick={() => onViewChange('email')}
-            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'email' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+            className={`group hidden h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'email' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
           >
             <Mail className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">Email</span>
@@ -64,7 +64,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
             // href="/product/316769"
             href="#"
             onClick={() => onViewChange('product')}
-            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'product' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+            className={`group hidden h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'product' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
           >
             <DollarSign className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">product</span>
@@ -115,7 +115,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
         <TooltipTrigger asChild>
           <Link
             href="#"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+            className="hidden h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
           >
             <Users2 className="h-5 w-5" />
             <span className="sr-only">Customers</span>
@@ -123,11 +123,11 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
         </TooltipTrigger>
         <TooltipContent side="right">Customers</TooltipContent>
       </Tooltip>
-      <Tooltip>
+      <Tooltip >
         <TooltipTrigger asChild>
           <Link
             href="#"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
+            className=" h-9 w-9 hidden items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8"
           >
             <LineChart className="h-5 w-5" />
             <span className="sr-only">Analytics</span>
@@ -136,7 +136,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
         <TooltipContent side="right">Analytics</TooltipContent>
       </Tooltip>
     </nav>
-    <nav className="mt-auto flex flex-col items-center gap-4 px-2 sm:py-4">
+    <nav className="mt-auto flex-col items-center gap-4 px-2 sm:py-4 hidden">
       <Tooltip>
         <TooltipTrigger asChild>
           <Link

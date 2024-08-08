@@ -16,7 +16,7 @@ export function DeleteConfirmationPopup({ isOpen, onClose, onConfirm, promptTitl
                 <DialogHeader>
                     <DialogTitle>Confirm Deletion</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to delete the prompt "{promptTitle}"? This action cannot be undone.
+                    Are you sure you want to delete the prompt &ldquo;{promptTitle}&rdquo;? This action cannot be undone.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter>

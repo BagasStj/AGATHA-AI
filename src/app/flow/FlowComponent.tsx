@@ -94,36 +94,11 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
   const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
   const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
 
-
   const onViewDocument = useCallback(() => {
-    // This is a mock function. In a real application, you would fetch the documents from your backend.
-    if (user) {
-      fetchDocuments();
-    }
     setIsDocumentViewOpen(true);
   }, []);
 
-  const fetchDocuments = async () => {
-    try {
-      const response = await fetch(`/api/get-documents?userId=${user?.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch documents');
-      }
-      const data = await response.json();
-      setDocuments(data.map((doc: any) => ({
-        id: doc.id,
-        name: doc.fileName,
-        created: format(new Date(doc.created), 'yyyy-MM-dd')
-      })));
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch documents. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+
 
 
   const onConnect = useCallback(
@@ -771,7 +746,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
           <DocumentViewPopup
             isOpen={isDocumentViewOpen}
             onClose={() => setIsDocumentViewOpen(false)}
-            documents={documents}
+            user={user}
           />
         </CardContent>
       </Card>

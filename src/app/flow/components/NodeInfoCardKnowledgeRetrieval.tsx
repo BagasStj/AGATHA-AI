@@ -64,6 +64,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
 
             const data = await response.json();
             console.log('API Response:', data);
+            setIsLoading(false);
+            onClose();
             return data;
         } catch (error) {
             console.error('Error in fetchUpserrt:', error);
@@ -77,8 +79,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             alert('Please upload a file before saving.');
             return;
         }
-        setIsLoading(true);
         try {
+            setIsLoading(true);
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const base64File = e.target?.result as string;
@@ -104,14 +106,16 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     fileName: fileName,
                     description: description,
                 });
+            setIsLoading(false);
+
             };
             reader.readAsDataURL(file);
+        
         } catch (error) {
             console.error('Error in handleSave:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
-            setIsLoading(false);
-            onClose();
+         
         }
     };
     const handleFileUpload = (uploadedFile: File) => {

@@ -17,6 +17,7 @@ export async function GET(request: Request) {
         id: true,
         fileName: true,
         created: true,
+        file: true,
       },
       where: {
         userId: userId,

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { ClockIcon, HashIcon, PlusIcon, XIcon, ChevronDownSquare ,RectangleEllipsis, PencilIcon, TrashIcon } from 'lucide-react'
+import { ClockIcon, HashIcon, PlusIcon, XIcon, ChevronDownSquare, RectangleEllipsis, PencilIcon, TrashIcon, ListIcon, MoreVertical } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -14,7 +14,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { useState, useEffect } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { Slider } from "@/components/ui/slider" 
+import { Slider } from "@/components/ui/slider"
 import { useToast } from "@/components/ui/use-toast"
 import {
     NavigationMenu,
@@ -47,6 +47,9 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useRouter } from 'next/navigation';
+import PromptListDialog from './PromptListDialog';
+import PromptDialog from './PromptDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 type SidebarProps = {
     chatHistory: { id: string; title: string; messages: any[]; timestamp: number | string }[]
@@ -56,6 +59,7 @@ type SidebarProps = {
     setModel: (model: 'gpt-3.5-turbo' | 'gpt-3.5-turbo-16k') => void
     isOpen: boolean
     onClose: () => void
+    onPromptSaved: () => void;
     prompt: string
     title: string
     setTitle: (title: string) => void
@@ -69,41 +73,42 @@ type SidebarProps = {
     frequencyPenalty: number
     setFrequencyPenalty: (frequencyPenalty: number) => void
     maxTokens: number
-    setMaxTokens: (maxTokens: number) => void 
+    setMaxTokens: (maxTokens: number) => void
     setCurrentPrompt: (prompt: Prompt) => void
     setCurrentTitle: (title: string) => void
 }
 
 type Prompt = {
-  id: string;
-  title: string;
-  prompt: string;
-  temperature: number;
-  topP: number;
-  presencePenalty: number;
-  frequencyPenalty: number;
-  maxTokens: number;
+    id: string;
+    title: string;
+    prompt: string;
+    temperature: number;
+    topP: number;
+    presencePenalty: number;
+    frequencyPenalty: number;
+    maxTokens: number;
 }
 
 const DEFAULT_PROMPT: Prompt = {
-  id: 'default',
-  title: 'Chat AI',
-  prompt: 'You are a helpful AI assistant. Answer the user\'s questions to the best of your ability.',
-  temperature: 0.5,
-  topP: 1,
-  presencePenalty: 0,
-  frequencyPenalty: 0,
-  maxTokens: 2048,
+    id: 'default',
+    title: 'Chat AI',
+    prompt: 'You are a helpful AI assistant. Answer the user\'s questions to the best of your ability.',
+    temperature: 0.2,
+    topP: 1,
+    presencePenalty: 0,
+    frequencyPenalty: 0,
+    maxTokens: 2048,
 };
 
-export default function Sidebar({ 
-    chatHistory, 
-    startNewChat, 
-    loadChat, 
-    model, 
-    setModel, 
-    isOpen, 
-    onClose, 
+export default function Sidebar({
+    chatHistory,
+    startNewChat,
+    loadChat,
+    model,
+    setModel,
+    isOpen,
+    onClose,
+    onPromptSaved,
     prompt,
     setPrompt,
     temperature,
@@ -137,6 +142,8 @@ export default function Sidebar({
     const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
     const router = useRouter();
     const [defaultPrompt, setDefaultPrompt] = useState<Prompt>(DEFAULT_PROMPT);
+    const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
+    const [currentPrompt , setiCurrentPrompt] = useState<Prompt | null>(null);
 
     useEffect(() => {
         setTempPrompt(prompt);
@@ -146,7 +153,7 @@ export default function Sidebar({
         setTempPresencePenalty(presencePenalty ?? 0.6);
         setTempFrequencyPenalty(frequencyPenalty ?? 0.6);
         setTempMaxTokens(maxTokens ?? 3048);
-    }, [prompt, temperature, topP, presencePenalty, frequencyPenalty, maxTokens , title]);
+    }, [prompt, temperature, topP, presencePenalty, frequencyPenalty, maxTokens, title]);
 
     const handlePromptSubmit = async () => {
         setIsLoading(true);
@@ -170,12 +177,12 @@ export default function Sidebar({
                         maxTokens: tempMaxTokens,
                     }),
                 });
-            
+
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.message || 'Failed to update prompt settings');
                 }
-            
+
                 result = await response.json();
             } else {
                 // Create new prompt (existing logic)
@@ -201,7 +208,7 @@ export default function Sidebar({
             }
 
             console.log('Chat settings saved:', result);
-           
+
             setPrompt(tempPrompt);
             setTitle(tempTitle);
             setTemperature(tempTemperature);
@@ -241,6 +248,7 @@ export default function Sidebar({
     }
 
     const fetchPrompts = async () => {
+        setIsLoadingPrompts(true);
         try {
             const response = await fetch('/api/prompts');
             if (!response.ok) {
@@ -248,6 +256,8 @@ export default function Sidebar({
             }
             const data = await response.json();
             setPrompts(data);
+            setIsLoadingPrompts(false);
+
         } catch (error) {
             console.error('Error fetching prompts:', error);
             toast({
@@ -257,13 +267,30 @@ export default function Sidebar({
                 variant: "destructive",
             });
         }
-    };
+        setIsLoadingPrompts(false);
+    }
+
 
     useEffect(() => {
         if (isPromptListDialogOpen) {
             fetchPrompts();
         }
     }, [isPromptListDialogOpen]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.shiftKey && event.key === 'Enter') {
+                event.preventDefault(); 
+                handleStartNewChat();
+            }
+        };
+    
+        document.addEventListener('keydown', handleKeyDown);
+    
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     const handleEditPrompt = (prompt: Prompt) => {
         console.log("prompt -> ", prompt);
@@ -306,7 +333,7 @@ export default function Sidebar({
 
             // Refresh the prompts list
             fetchPrompts();
-        } catch (error : any) {
+        } catch (error: any) {
             console.error('Error deleting prompt:', error);
             toast({
                 title: "Error",
@@ -330,36 +357,36 @@ export default function Sidebar({
         });
     };
 
-   const handlePromptCardClick = (prompt: Prompt) => {
-    if (prompt.id === 'default') {
-        console.log("handleSetDefaultPrompt -> ", prompt); 
-        setCurrentPrompt(prompt);
-        setCurrentTitle(prompt.title);
-        setPrompt(prompt.prompt);
-        setTemperature(prompt.temperature);
-        setTopP(prompt.topP);
-        setPresencePenalty(prompt.presencePenalty);
-        setFrequencyPenalty(prompt.frequencyPenalty);
-        setMaxTokens(prompt.maxTokens);
-        startNewChat();
-    } else {
-        setCurrentPrompt(prompt);
-        setCurrentTitle(prompt.title);
-        setPrompt(prompt.prompt);
-        setTemperature(prompt.temperature);
-        setTopP(prompt.topP);
-        setPresencePenalty(prompt.presencePenalty);
-        setFrequencyPenalty(prompt.frequencyPenalty);
-        setMaxTokens(prompt.maxTokens);
-        startNewChat(); // Add this line to start a new chat
-        toast({
-            title: prompt.title,
-            description: `"${prompt.title}" is now the prompt for new chats.`,
-            duration: 3000,
-        });
-    }
-    setIsPromptListDialogOpen(false);
-};
+    const handlePromptCardClick = (prompt: Prompt) => {
+        if (prompt.id === 'default') {
+            console.log("handleSetDefaultPrompt -> ", prompt);
+            setCurrentPrompt(prompt);
+            setCurrentTitle(prompt.title);
+            setPrompt(prompt.prompt);
+            setTemperature(prompt.temperature);
+            setTopP(prompt.topP);
+            setPresencePenalty(prompt.presencePenalty);
+            setFrequencyPenalty(prompt.frequencyPenalty);
+            setMaxTokens(prompt.maxTokens);
+            startNewChat();
+        } else {
+            setCurrentPrompt(prompt);
+            setCurrentTitle(prompt.title);
+            setPrompt(prompt.prompt);
+            setTemperature(prompt.temperature);
+            setTopP(prompt.topP);
+            setPresencePenalty(prompt.presencePenalty);
+            setFrequencyPenalty(prompt.frequencyPenalty);
+            setMaxTokens(prompt.maxTokens);
+            startNewChat(); // Add this line to start a new chat
+            toast({
+                title: prompt.title,
+                description: `"${prompt.title}" is now the prompt for new chats.`,
+                duration: 3000,
+            });
+        }
+        setIsPromptListDialogOpen(false);
+    };
 
     const handleStartNewChat = () => {
         setCurrentPrompt(defaultPrompt);
@@ -385,314 +412,153 @@ export default function Sidebar({
         setIsPromptDialogOpen(true);
     };
 
+    const handleClosePromptDialog = () => {
+        setIsPromptDialogOpen(false);
+        setEditingPrompt(null);
+        setTempTitle('');
+    };
+
     return (
         <>
-        <aside className={`fixed inset-y-0 left-0 z-0 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
-            <header className="border-b border-gray-200 p-4 flex justify-between items-center">
-                <Button onClick={onClose} variant="ghost" className="md:hidden">
-                    <XIcon className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center space-x-2 w-full">
-                    <Button 
-                        onClick={handleStartNewChat} 
-                        className="flex-grow flex items-center justify-center"
-                        variant="outline"
-                    >
-                        <PlusIcon className="mr-2 h-4 w-4" />
-                        New Chat
+            <aside className={`fixed inset-y-0 left-0 z-0 w-64 bg-white text-gray-800 p-4 flex flex-col border border-gray-200 rounded-lg mr-4 transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+                <header className="border-b border-gray-200 p-4 flex justify-between items-center">
+                    <Button onClick={onClose} variant="ghost" className="md:hidden">
+                        <XIcon className="h-5 w-5" />
                     </Button>
-                    <NavigationMenu>
-                        <NavigationMenuList>
-                            <NavigationMenuItem>
-                                <NavigationMenuTrigger className="h-10 w-10 p-0">
-                                    <RectangleEllipsis className="h-5 w-5" />
-                                </NavigationMenuTrigger>
-                                <NavigationMenuContent>
-                                    <ul className="grid w-[200px] gap-3 p-4">
-                                        <ListItem
-                                            title="Add New Prompt"
-                                            onClick={openNewPromptDialog}
-                                        >
-                                            Create a new custom prompt
-                                        </ListItem>
-                                        <ListItem
-                                            title="List Prompts"
-                                            onClick={() => {
-                                                fetchPrompts();
-                                                setIsPromptListDialogOpen(true);
-                                            }}
-                                        >
-                                            View and manage prompts
-                                        </ListItem>
-                                    </ul>
-                                </NavigationMenuContent>
-                            </NavigationMenuItem>
-                        </NavigationMenuList>
-                    </NavigationMenu>
-                </div>
-            </header>
-            <ScrollArea className="flex-grow p-4">
-                {chatHistory.map((chat) => (
-                    <div key={chat.id} className="mb-2">
+                    <div className="flex items-center space-x-2 w-full">
                         <Button
-                            variant="ghost"
-                            className="w-full justify-start mb-1 text-left text-sm text-gray-700 hover:bg-gray-100"
-                            onClick={() => loadChat(chat.id)}
+                            onClick={handleStartNewChat}
+                            className="flex-grow flex items-center justify-center bg-[#6c47ff]"
                         >
-                            {chat.title}
+                            <PlusIcon className="mr-2 h-4 w-4" />
+                            New Chat
                         </Button>
-                        <div className="flex justify-between text-xs text-gray-500 px-2">
-                            <span className="flex items-center">
-                                <ClockIcon className="mr-1 h-3 w-3" />
-                                {formatDate(chat.timestamp)}
-                            </span>
-                            <span className="flex items-center">
-                                <HashIcon className="mr-1 h-3 w-3" />
-                                {chat.id.slice(0, 8)}
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </ScrollArea>
-            <div className="mt-auto p-4 border-t border-gray-200">
-                <Button 
-                    onClick={() => setModel('gpt-3.5-turbo')} 
-                    variant={model === 'gpt-3.5-turbo' ? 'secondary' : 'ghost'}
-                    className="w-full mb-1 text-sm justify-start text-gray-700"
-                >
-                    GPT-3.5-Turbo
-                </Button>
-                <Button 
-                    onClick={() => setModel('gpt-3.5-turbo-16k')} 
-                    variant={model === 'gpt-3.5-turbo-16k' ? 'secondary' : 'ghost'}
-                    className="w-full text-sm justify-start text-gray-700"
-                >
-                    GPT-3.5-Turbo-16k
-                </Button>
-            </div>
-        </aside>
-        <Dialog open={isPromptDialogOpen} onOpenChange={(open) => {
-            setIsPromptDialogOpen(open);
-            if (!open) {
-                setEditingPrompt(null);
-                setTempTitle('');
-            }
-        }}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>{editingPrompt ? 'Edit Prompt' : 'Custom Prompt and Settings'}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input
-                            id="title"
-                            value={tempTitle}
-                            onChange={(e) => setTempTitle(e.target.value)}
-                            placeholder="Enter a title for your prompt"
-                        /> 
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="prompt">Prompt</Label>
-                        <Textarea
-                            id="prompt"
-                            value={tempPrompt}
-                            onChange={(e) => setTempPrompt(e.target.value)}
-                            className="h-24"
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="temperature">Temperature: {tempTemperature.toFixed(2)}</Label>
-                        <Slider
-                            id="temperature"
-                            min={0}
-                            max={1}
-                            step={0.01}
-                            value={[tempTemperature]}
-                            onValueChange={(value) => setTempTemperature(value[0])}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="topP">Top P: {tempTopP.toFixed(2)}</Label>
-                        <Slider
-                            id="topP"
-                            min={0}
-                            max={1}
-                            step={0.01}
-                            value={[tempTopP]}
-                            onValueChange={(value) => setTempTopP(value[0])}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="presencePenalty">Presence Penalty: {tempPresencePenalty.toFixed(2)}</Label>
-                        <Slider
-                            id="presencePenalty"
-                            min={0}
-                            max={2}
-                            step={0.01}
-                            value={[tempPresencePenalty]}
-                            onValueChange={(value) => setTempPresencePenalty(value[0])}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="frequencyPenalty">Frequency Penalty: {tempFrequencyPenalty.toFixed(2)}</Label>
-                        <Slider
-                            id="frequencyPenalty"
-                            min={0}
-                            max={2}
-                            step={0.01}
-                            value={[tempFrequencyPenalty]}
-                            onValueChange={(value) => setTempFrequencyPenalty(value[0])}
-                        />
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="maxTokens">Max Tokens: {tempMaxTokens}</Label>
-                        <Slider
-                            id="maxTokens"
-                            min={1}
-                            max={4096}
-                            step={1}
-                            value={[tempMaxTokens]}
-                            onValueChange={(value) => setTempMaxTokens(value[0])}
-                        />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button onClick={handlePromptSubmit} disabled={isLoading || !tempTitle.trim()}>
-                        {isLoading ? 'Saving...' : editingPrompt ? 'Update Prompt' : 'Set Prompt and Settings'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-        <Dialog open={isPromptListDialogOpen} onOpenChange={setIsPromptListDialogOpen}>
-            <DialogContent className="sm:max-w-[725px] h-[80vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Available Prompts</DialogTitle>
-                    <DialogDescription>
-                        Browse and select from our collection of pre-defined prompts.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="flex-grow pr-4">
-                    <div className="grid gap-4 py-4 md:grid-cols-2">
-                        <Card 
-                            key={DEFAULT_PROMPT.id} 
-                            className="relative cursor-pointer bg-blue-50"
-                            onClick={() => handlePromptCardClick(DEFAULT_PROMPT)}
-                        >
-                            <CardHeader>
-                                <CardTitle>{DEFAULT_PROMPT.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription>{DEFAULT_PROMPT.prompt.slice(0, 100)}...</CardDescription>
-                            </CardContent>
-                            <div className="absolute top-2 right-2">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSetDefaultPrompt(DEFAULT_PROMPT);
-                                    }}
-                                >
-                                    Set as Default
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-10 w-10 p-0">
+                                    <MoreVertical className="h-5 w-5" />
                                 </Button>
-                            </div>
-                        </Card>
-                        {prompts.map((prompt) => (
-                            <Card 
-                                key={prompt.id} 
-                                className="relative cursor-pointer"
-                                onClick={() => handlePromptCardClick(prompt)}
-                            >
-                                <CardHeader>
-                                    <CardTitle>{prompt.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <CardDescription>{prompt.prompt.slice(0, 100)}...</CardDescription>
-                                </CardContent>
-                                <div className="absolute top-2 right-2 flex space-x-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleEditPrompt(prompt)}
-                                    >
-                                        <PencilIcon className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => handleDeletePrompt(prompt)}
-                                    >
-                                        <TrashIcon className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </Card>
-                        ))}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                                <DropdownMenuItem onClick={openNewPromptDialog}>
+                                    <PlusIcon className="mr-2 h-4 w-4" />
+                                    <span>Add New Prompt</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {
+                                    fetchPrompts();
+                                    setIsPromptListDialogOpen(true);
+                                }}>
+                                    <ListIcon className="mr-2 h-4 w-4" />
+                                    <span>List Prompts</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
+                </header>
+                <ScrollArea className="flex-grow p-4">
+                    {chatHistory.map((chat) => (
+                        <div key={chat.id} className="mb-2">
+                            <Button
+                                variant="ghost"
+                                className="w-full justify-start mb-1 text-left text-sm text-gray-700 hover:bg-gray-100"
+                                onClick={() => loadChat(chat.id)}
+                            >
+                                {chat.title}
+                            </Button>
+                            <div className="flex justify-between text-xs text-gray-500 px-2">
+                                <span className="flex items-center">
+                                    <ClockIcon className="mr-1 h-3 w-3" />
+                                    {formatDate(chat.timestamp)}
+                                </span>
+                                <span className="flex items-center">
+                                    <HashIcon className="mr-1 h-3 w-3" />
+                                    {chat.id.slice(0, 8)}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
                 </ScrollArea>
-                <DialogFooter>
-                    <Button onClick={() => setIsPromptListDialogOpen(false)}>Close</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                {/* <div className="mt-auto p-4 border-t border-gray-200">
+                    <Button
+                        onClick={() => setModel('gpt-3.5-turbo')}
+                        variant={model === 'gpt-3.5-turbo' ? 'secondary' : 'ghost'}
+                        className="w-full mb-1 text-sm justify-start text-gray-700"
+                    >
+                        GPT-3.5-Turbo
+                    </Button>
+                    <Button
+                        onClick={() => setModel('gpt-3.5-turbo-16k')}
+                        variant={model === 'gpt-3.5-turbo-16k' ? 'secondary' : 'ghost'}
+                        className="w-full text-sm justify-start text-gray-700"
+                    >
+                        GPT-3.5-Turbo-16k
+                    </Button>
+                </div> */}
+            </aside>
+            <PromptDialog
+                onPromptSaved={onPromptSaved}
+                isOpen={isPromptDialogOpen}
+                onClose={handleClosePromptDialog}
+                editingPrompt={editingPrompt}
+                isLoading={isLoading}
 
-        <AlertDialog open={!!promptToDelete} onOpenChange={() => setPromptToDelete(null)}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the prompt.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-                        Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+            />
+            <PromptListDialog
+                isOpen={isPromptListDialogOpen}
+                onClose={() => setIsPromptListDialogOpen(false)}
+                prompts={prompts}
+                defaultPrompt={DEFAULT_PROMPT}
+                onPromptClick={handlePromptCardClick}
+                onEditPrompt={handleEditPrompt}
+                onDeletePrompt={handleDeletePrompt}
+                onSetDefaultPrompt={handleSetDefaultPrompt}
+                isLoading={isLoadingPrompts}
+                currentPrompt={currentPrompt}
+
+            />
+
+     
         </>
     )
 }
 
 const ListItem = React.forwardRef<
-  React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a"> & { onClick?: () => void, href?: string | UrlObject }
+    React.ElementRef<"a">,
+    React.ComponentPropsWithoutRef<"a"> & { onClick?: () => void, href?: string | UrlObject }
 >(({ className, title, children, onClick, href, ...props }, ref) => {
 
-  const content = (
-    <div
-      className={cn(
-        "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-        className
-      )}
-    >
-      <div className="text-sm font-medium leading-none">{title}</div>
-      <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-        {children}
-      </p>
-    </div>
-  )
-
-  if (onClick) {
-    return (
-      <li>
-        <button onClick={onClick} className="w-full text-left">
-          {content}
-        </button>
-      </li>
+    const content = (
+        <div
+            className={cn(
+                "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                className
+            )}
+        >
+            <div className="text-sm font-medium leading-none">{title}</div>
+            <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                {children}
+            </p>
+        </div>
     )
-  }
 
-  return (
-    <li>
-    <NavigationMenuLink asChild>
-      <Link href={href || '#'} ref={ref} {...props}>
-        {content}
-      </Link>
-    </NavigationMenuLink>
-  </li>
-  )
+    if (onClick) {
+        return (
+            <li>
+                <button onClick={onClick} className="w-full text-left">
+                    {content}
+                </button>
+            </li>
+        )
+    }
+
+    return (
+        <li>
+            <NavigationMenuLink asChild>
+                <Link href={href || '#'} ref={ref} {...props}>
+                    {content}
+                </Link>
+            </NavigationMenuLink>
+        </li>
+    )
 })
 ListItem.displayName = "ListItem"

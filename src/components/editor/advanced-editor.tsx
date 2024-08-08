@@ -23,7 +23,7 @@ import { Separator } from "../ui/separator";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Label } from "../ui/label";
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
-
+import { useEffect, useRef } from "react";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -38,13 +38,35 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
   const [openLink, setOpenLink] = useState(false);
   const [openText, setOpenText] = useState(false);
   const [openAI, setOpenAI] = useState(false);
+  const [isNovelTitleSelected, setIsNovelTitleSelected] = useState(false);
+  // const titleRef = useRef(null);
+  const titleRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (titleRef.current && !titleRef.current.contains(event.target as Node)) {
+        setIsNovelTitleSelected(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
   return (
     <EditorRoot>
       <div className="flex justify-center w-full">
         <div className="w-[98%] max-w-[98%]">
           <Card className="mb-4">
             <CardHeader>
-              <CardTitle>Text Editor Novel</CardTitle>
+              <CardTitle
+                ref={titleRef}
+                className="cursor-pointer"
+                onClick={() => setIsNovelTitleSelected(!isNovelTitleSelected)}
+              >
+                Text Editor Novel
+              </CardTitle>
               <CardDescription>
                 Novel is a Notion-style WYSIWYG editor with AI-powered autocompletion. Built with Tiptap + Vercel AI
               </CardDescription>
@@ -102,23 +124,24 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
                       </EditorCommandList>
                     </EditorCommand>
 
-                    <EditorBubble
-                      tippyOptions={{ placement: "top" }}
-                      className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border bg-popover shadow-md"
-                    >
-                      <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
-                        <Separator orientation="vertical" />
-                        <NodeSelector open={openNode} onOpenChange={setOpenNode} />
-                        <Separator orientation="vertical" />
-
-                        <LinkSelector open={openLink} onOpenChange={setOpenLink} />
-                        <Separator orientation="vertical" />
-                        <Separator orientation="vertical" />
-                        <TextButtons />
-                        <Separator orientation="vertical" />
-                        <ColorSelector open={openColor} onOpenChange={setOpenColor} />
-                      </GenerativeMenuSwitch>
-                    </EditorBubble>
+                    {/* {isNovelTitleSelected && ( */}
+                      <EditorBubble
+                        tippyOptions={{ placement: "bottom" }}
+                        className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border bg-popover shadow-md"
+                      >
+                        <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
+                          <Separator orientation="vertical" />
+                          <NodeSelector open={openNode} onOpenChange={setOpenNode} />
+                          <Separator orientation="vertical" />
+                          <LinkSelector open={openLink} onOpenChange={setOpenLink} />
+                          <Separator orientation="vertical" />
+                          <Separator orientation="vertical" />
+                          <TextButtons />
+                          <Separator orientation="vertical" />
+                          <ColorSelector open={openColor} onOpenChange={setOpenColor} />
+                        </GenerativeMenuSwitch>
+                      </EditorBubble>
+                    {/* )} */}
                   </EditorContent>
                 </div>
               </form>

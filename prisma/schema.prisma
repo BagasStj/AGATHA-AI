@@ -70,3 +70,28 @@ model File {
   userName String
   file      String   @db.Text
 }
+model Promptlist {
+  id               String   @id @default(cuid())
+  userId           String
+  username         String
+  title            String
+  prompt           String
+  model            String
+  temperature      Float
+  topP             Float
+  maxTokens        Int
+  presencePenalty  Float
+  frequencyPenalty Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ChatHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  title     String
+  messages  Json
+  timestamp DateTime @default(now())
+  prompt    String?
+}

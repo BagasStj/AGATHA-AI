@@ -9,6 +9,7 @@ import { DeleteConfirmationPopup } from './DeleteConfirmationPopup';
 import { UpdatePromptPopup } from './UpdatePromptPopup';
 import { SiOpenai } from "react-icons/si";
 
+
 type Prompt = {
     id: string;
     title: string;

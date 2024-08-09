@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { SendIcon, MenuIcon, UserIcon, MicIcon, ChevronRightIcon, ListIcon, MoreHorizontal } from 'lucide-react'
+import { SendIcon, MenuIcon, UserIcon, MicIcon, ChevronRightIcon, ListIcon, MoreHorizontal, ArrowRightIcon, Loader2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 import { usePopper } from 'react-popper'
 import {
@@ -10,6 +10,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { CopyIcon, CheckIcon } from 'lucide-react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import Magic from '@/components/tailwind/magic'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
 
 type ChatAreaProps = {
   messages: any[]
@@ -48,9 +60,15 @@ export default function ChatArea({
   const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null);
   const [popperElement, setPopperElement] = useState<HTMLDivElement | null>(null);
   const [showPopper, setShowPopper] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false);
 
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: '',
+  })
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: 'bottom-start',
+    placement: 'top',
     modifiers: [
       {
         name: 'offset',
@@ -76,6 +94,64 @@ export default function ChatArea({
     }
   }, []);
 
+
+  const formatMessage = (content: string) => {
+    const codeBlockRegex = /```([\s\S]*?)```/g;
+    const parts = content.split(codeBlockRegex);
+
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // This is a code block
+        const [language, ...codeLines] = part.trim().split('\n');
+        const code = codeLines.join('\n');
+        return (
+          <div key={index} className="relative my-4">
+            <div className="bg-gray-800 text-gray-200 rounded-t-md px-4 py-2 text-sm font-mono flex items-center justify-between">
+              <span>{language || 'Code'}</span>
+              <CopyButton text={code} />
+            </div>
+            <SyntaxHighlighter
+              language={language.toLowerCase() || 'text'}
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+              }}
+            >
+              {code}
+            </SyntaxHighlighter>
+          </div>
+        );
+      }
+      // This is regular text
+      return <p key={index} className="mb-2 text-gray-800">{part}</p>;
+    });
+  };
+  const CopyButton = ({ text }: { text: string }) => {
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(text);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    return (
+      <button
+        onClick={handleCopy}
+        className="p-1 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+        aria-label="Copy code"
+      >
+        {isCopied ? (
+          <CheckIcon className="h-4 w-4 text-green-500" />
+        ) : (
+          <CopyIcon className="h-4 w-4 text-gray-300" />
+        )}
+      </button>
+    );
+  };
+
   useEffect(() => {
     document.addEventListener('mouseup', handleTextSelection);
     return () => {
@@ -83,10 +159,40 @@ export default function ChatArea({
     };
   }, [handleTextSelection]);
 
-  const handleAskAI = () => {
-    handleInputChange(`Regarding the following text: "${selectedText}", can you explain or elaborate on it?`);
+  const handleAskAI = async (action: 'reply' | 'generate') => {
+    if (action === 'reply') {
+      handleInputChange(`Regarding the following text: "${selectedText}", can you explain or elaborate on it?`);
+    } else if (action === 'generate') {
+      setIsGenerating(true);
+      // try {
+      //   const response = await openai.createCompletion({
+      //     model: "text-davinci-002",
+      //     prompt: `Regarding the following text: "${selectedText}", can you explain or elaborate on it?`,
+      //     max_tokens: 150,
+      //     n: 1,
+      //     stop: null,
+      //     temperature: 0.7,
+      //   });
+
+      //   const generatedText = response.data.choices[0].text?.trim() || '';
+      //   setGeneratedContent(generatedText);
+        
+      //   if (editor) {
+      //     editor.commands.setContent(generatedText);
+      //     editor.commands.focus('end');
+      //   }
+      // } catch (error) {
+      //   console.error('Error generating text:', error);
+      //   setGeneratedContent('An error occurred while generating text.');
+      // } finally {
+      //   setIsGenerating(false);
+      // }
+    }
     setShowPopper(false);
   };
+
+
+
   const startListening = () => {
     setIsListening(true)
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
@@ -125,7 +231,7 @@ export default function ChatArea({
     setSelectedText(window.getSelection()?.toString() || '');
   };
 
- 
+
   return (
     <main className="flex-1 flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden h-full">
       <header className="border-b border-gray-200 p-4 flex justify-between items-center">
@@ -164,7 +270,7 @@ export default function ChatArea({
                     </div>
                     <div className="flex-grow overflow-hidden">
                       <div className="text-sm font-semibold mb-1"></div>
-                      <div className="text-gray-800 break-words">{m.content}</div>
+                      <div className="text-gray-800 break-words">{formatMessage(m.content)}</div>
                     </div>
                   </div>
                 </div>
@@ -201,13 +307,42 @@ export default function ChatArea({
           {...attributes.popper}
           className="bg-white border border-gray-200 shadow-lg rounded-lg p-2 z-50"
         >
-          <button
-            className="flex items-center space-x-2 text-sm text-gray-700 hover:bg-gray-100 rounded px-2 py-1"
-            onClick={handleAskAI}
-          >
-            <MoreHorizontal size={16} />
-            <span>Ask AI</span>
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="gap-1 rounded-none text-purple-500"
+                variant="ghost"
+                size="sm"
+              >
+                <Magic className="h-5 w-5" />
+                Ask AI
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleAskAI('reply')}>
+                Reply
+                <SendIcon className="ml-auto h-4 w-4" />
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleAskAI('generate')} disabled={isGenerating}>
+                {isGenerating ? (
+                  <>
+                    Generating...
+                    <Loader2 className="ml-auto h-4 w-4 animate-spin" />
+                  </>
+                ) : (
+                  <>
+                    Next Generate
+                    <ArrowRightIcon className="ml-auto h-4 w-4" />
+                  </>
+                )}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {generatedContent && (
+            <div className="mt-2 p-2 bg-gray-100 rounded">
+              <EditorContent editor={editor} />
+            </div>
+          )}
         </div>
       )}
     </main>

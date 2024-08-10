@@ -13,8 +13,8 @@ import ProductDetail from '../product/[productId]/page'
 import EditorPage from '../novel/page'
 import FlowPage from '../flow/page'
 import AIPhonePage from '../aiphone/page'
-import ChatPageFlowise from '../chat-flowise/page'
 import { InactivityHandler } from '@/components/InactivityHandler '
+import ChatNewPage from '../chat-new/page'
 
 export default function Dashboard() {
 
@@ -25,9 +25,9 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new'>('users');
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new') => {
     setCurrentView(view);
   };
 
@@ -188,13 +188,15 @@ const handleDeleteUser = async (id: string) => {
                 onDeleteUser={handleDeleteUser}
                 onAddUser={handleAddUser}
               />
-            ) : currentView === 'chat' ? (
-              <AIChat />
+            ) 
+            // : currentView === 'chat' ? (
+            //   <AIChat />
+            // )
+             : currentView === 'chat' ? (
+              <ChatNewPage />
             ) : currentView === 'product' ? (
               <ProductDetail />
-            ) : currentView === 'chat-flowise' ? (
-              <ChatPageFlowise />
-            ) : currentView === 'flow' ? (
+            )  : currentView === 'flow' ? (
               <FlowPage />
             ) : currentView === 'aiphone' ? (
               <AIPhonePage />

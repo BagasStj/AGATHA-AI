@@ -40,8 +40,8 @@ import { useClerk } from "@clerk/nextjs";
 interface HeaderComponentProps {
   currentUser: any;
   onLogout: () => void;
-  currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise';
-  onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise') => void;
+  currentView: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new';
+  onViewChange: (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new') => void;
 }
 
 export function HeaderComponent({ currentUser, onLogout, currentView, onViewChange }: HeaderComponentProps) {
@@ -57,7 +57,7 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
     setIsClient(true);
   }, []);
 
-  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone') => {
+  const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-new') => {
     onViewChange(view);
     setIsOpen(false);
   };
@@ -80,7 +80,7 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
               <Link
                 key={view}
                 href="#"
-                onClick={() => handleViewChange(view as 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone')}
+                onClick={() => handleViewChange(view as 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-new')}
                 className={`flex items-center gap-3 px-2 py-2 rounded-md transition-colors ${currentView === view
                   ? 'bg-gray-100 text-gray-9000'
                   : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -104,7 +104,7 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
               <Link href="#" onClick={() => onViewChange('users')} className="text-gray-600 hover:text-gray-900">Dashboard</Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
-          {currentView === 'chat' && (
+          {/* {currentView === 'chat' && (
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -115,14 +115,14 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
                 </BreadcrumbLink>
               </BreadcrumbItem>
             </>
-          )}
-          {currentView === 'chat-flowise' && (
+          )} */}
+          {currentView === 'chat' && (
             <>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="#" onClick={() => onViewChange('chat-flowise')} className="text-gray-600 hover:text-gray-900">
-                    Chat Flowise
+                  <Link href="#" onClick={() => onViewChange('chat-new')} className="text-gray-600 hover:text-gray-900">
+                    Chat
                   </Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>

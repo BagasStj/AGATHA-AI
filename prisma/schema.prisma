@@ -95,3 +95,22 @@ model ChatHistory {
   timestamp DateTime @default(now())
   prompt    String?
 }
+
+
+model ChatHistoryNEW {
+  id                String   @id @default(uuid())
+  userId            String
+  username          String
+  model             String
+  prompt            String   @db.Text
+  titlePrompt       String
+  titleChat         String
+  maxTokens         Int
+  topP              Float
+  temperature       Float
+  presencePenalty   Float
+  frequencyPenalty  Float
+  messages          Json[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

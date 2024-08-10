@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 
 
-export default function ChatLayout({
+export default function ChatNewLayout({
     children,
   }: {
     children: React.ReactNode

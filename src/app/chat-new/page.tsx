@@ -1,4 +1,4 @@
- "use client"
+"use client"
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Toaster } from '@/components/ui/toaster';
+import { isSameDay } from 'date-fns';
 
 
 const DEFAULT_PROMPT: any = {
@@ -38,7 +40,7 @@ const DEFAULT_PROMPT: any = {
   topP: 1,
   presencePenalty: 0,
   frequencyPenalty: 0,
-  maxTokens: 2048,
+  maxTokens: 150,
 };
 
 export default function ChatNewPage() {
@@ -77,6 +79,7 @@ export default function ChatNewPage() {
   const [selectedText, setSelectedText] = useState<string>('');
   const [isPopperOpen, setIsPopperOpen] = useState(false);
   const [popperPosition, setPopperPosition] = useState({ top: 0, left: 0 });
+  const [rateLimitedUser, setRateLimitedUser] = useState<any>([]);
 
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: 'top',
@@ -89,7 +92,7 @@ export default function ChatNewPage() {
       },
     ],
   });
-  
+
 
 
 
@@ -98,6 +101,13 @@ export default function ChatNewPage() {
       fetchChatHistory();
     }
   }, [user]);
+
+  const fetchRateLimitedUser = async () => {
+    const response = await fetch(`/api/rate-limit-user?username=${user?.username}`);
+    const data = await response.json();
+    setRateLimitedUser(data);
+    console.log('Rate limited user:', data);
+  }
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
@@ -148,9 +158,11 @@ export default function ChatNewPage() {
       presencePenalty: params.presencePenalty,
       frequencyPenalty: params.frequencyPenalty,
       maxTokens: params.maxTokens,
+      userId: user?.id,
+      username: user?.username,
     },
     onFinish: (message) => {
-
+      console.log('message', message)
       setChatHistory(prev => prev.map(chat =>
         chat.id === currentChatId
           ? { ...chat, messages: [...chat.messages, message], title: chat.messages[0].content.slice(0, 30) }
@@ -158,21 +170,79 @@ export default function ChatNewPage() {
       ))
 
     },
+    onError: (error) => {
+      console.error('Error from chat API:', error);
+      handleApiError(error);
+    },
   });
+
+  const handleApiError = async (error: Error) => {
+    await fetchRateLimitedUser();
+    console.log('Error from chat API:', rateLimitedUser);
+    
+    if (JSON.parse(error.message).message === 'You have reached your request limit for the day.') {
+      const today = new Date();
+      const existingRateLimit = rateLimitedUser.find((entry: any) => 
+        isSameDay(new Date(entry.timestamp), today)
+      );
+
+      if (!existingRateLimit) {
+        try {
+          const response = await fetch('/api/rate-limit-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user?.id,
+              username: user?.username,
+              feature: 'chat-bot-ai',
+            }),
+          });
+          if (!response.ok) throw new Error('Failed to save rate limit');
+          const savedRateLimit = await response.json();
+          setRateLimitedUser((prev : any) => [...prev, savedRateLimit]);
+        } catch (error) {
+          console.error('Error saving rate limit:', error);
+        }
+      }
+
+      toast({
+        title: "Rate Limit Exceeded",
+        description: "You have reached your request limit for the day.",
+        duration: 5000,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "An error occurred while sending your message.",
+        duration: 5000,
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (messages.length != 0) {
-      console.log('Updated messages:', messages, messages.map(m => ({
-        role: m.role,
-        content: m.content
-      })));
+      // console.log('Updated messages:', messages, messages.map(m => ({
+      //   role: m.role,
+      //   content: m.content
+      // })));
       saveChat(messages)
     }
     // saveChat(messages)
   }, [chatHistory]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    originalHandleSubmit(e);
+
+
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    try {
+      await originalHandleSubmit(e);
+    } catch (error: any) {
+      console.error('Error submitting chat:', error);
+      handleApiError(error);
+    }
     setSelectedText('');
     setIsPopperOpen(false);
   };
@@ -201,7 +271,7 @@ export default function ChatNewPage() {
         console.error('Error saving chat:', error);
       }
     } else {
-      console.log('updated Messages 333', newMessage)
+      // console.log('updated Messages 333', newMessage)
       try {
         const response = await fetch(`/api/chat-history-new/${currentChatId}`, {
           method: 'PUT',
@@ -327,7 +397,7 @@ export default function ChatNewPage() {
       topP: prompt.topP || 1,
       presencePenalty: prompt.presencePenalty || 0,
       frequencyPenalty: prompt.frequencyPenalty || 0,
-      maxTokens: prompt.maxTokens || 2048,
+      maxTokens: prompt.maxTokens || 150,
       titlePrompt: prompt.title,
     });
     handleCloseAvailablePrompts();
@@ -352,7 +422,7 @@ export default function ChatNewPage() {
           <div key={index} className="relative my-4">
             <div className="bg-gray-800 text-gray-200 rounded-t-md px-4 py-2 text-sm font-mono flex items-center justify-between">
               <span>{language || 'Code'}</span>
-              <CopyButton text={code} />
+              <CopyButton text={code} language={language} />
             </div>
             <SyntaxHighlighter
               language={language.toLowerCase() || 'text'}
@@ -423,18 +493,25 @@ export default function ChatNewPage() {
     });
   };
 
-
-  const CopyButton = ({ text }: { text: string }) => {
+  const CopyButton = ({ text, language }: { text: string, language: string }) => {
     const [isCopied, setIsCopied] = useState(false);
 
-    const handleCopy = () => {
-      navigator.clipboard.writeText(text);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+    const handleCopy = async () => {
+      try {
+        if (text == '') {
+          await navigator.clipboard.writeText(language);
+        } else {
+          await navigator.clipboard.writeText(text);
+        }
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
     };
 
     return (
-      <button
+      <Button
         onClick={handleCopy}
         className="p-1 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
         aria-label="Copy code"
@@ -444,9 +521,9 @@ export default function ChatNewPage() {
         ) : (
           <CopyIcon className="h-4 w-4 text-gray-300" />
         )}
-      </button>
+      </Button>
     );
-  };
+  }
 
 
   const loadChat = async (id: string) => {
@@ -508,281 +585,285 @@ export default function ChatNewPage() {
     }
   };
   return (
-    <div className="flex p-1 space-x-4 h-full ml-6">
-      {/* Left Sidebar */}
-      <Card className="w-64">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-2 w-full">
-            <Button
-              onClick={() => {
-                setCurrentChatId(null);
-                setMessages([]);
+    <>
+      <Toaster />
+      <div className="flex p-1 space-x-4 h-full ml-6">
+        {/* Left Sidebar */}
+        <Card className="w-64">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2 w-full">
+              <Button
+                onClick={() => {
+                  setCurrentChatId(null);
+                  setMessages([]);
 
-              }}
-              className="flex-grow flex items-center justify-center bg-[#6c47ff]"
-            >
-              <PlusIcon className="mr-2 h-4 w-4" />
-              New Chat
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-10 w-10 p-0">
-                  <ListPlus className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuItem onClick={handleOpenPromptDialog}>
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  <span>Add New Prompt</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleOpenAvailablePrompts}>
-                  <ListIcon className="mr-2 h-4 w-4" />
-                  <span>List Prompts</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <Separator className="my-4" />
-          <ScrollArea className="h-[calc(100vh-180px)] max-h-[69vh]">
-            {isLoadingChatHistory ? (
-              <div className="flex items-center justify-center h-20">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-              </div>
-            ) : error ? (
-              <p className="text-red-500 text-center">{error}</p>
-            ) : (
-              chatHistoryNEW.map((chat) => (
-                <TooltipProvider key={chat.id}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div
-                        className="mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
-                      >
-                        <div onClick={() => loadChat(chat.id)}>
-                          <h3 className="font-semibold truncate">{chat.titleChat}</h3>
-                          <p className="text-xs text-gray-500">{new Date(chat.createdAt).toLocaleString()}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:bg-red-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteChatConfirmation(chat.id, chat.titleChat);
-                          }}
-                        >
-                          <TrashIcon className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <div>
-                        <p className="font-semibold">{chat.titlePrompt}</p>
-                        <p className="text-sm text-gray-600 mt-1">{chat.prompt}</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
-
-      {/* Main content */}
-      <Card className="flex-1 flex flex-col">
-        <CardHeader className="border-b">
-          <CardTitle>{params.titlePrompt}</CardTitle>
-          <CardDescription>
-            {params.prompt.length > 50
-              ? params.prompt.slice(0, 50) + '...'
-              : params.prompt}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 flex flex-col justify-between p-4">
-          <ScrollArea className="flex-grow h-full">
-            <div className="max-w-2xl mx-auto py-4 px-4 h-[1vh]">
-              {messages.length === 0 ? (
-                <div className="text-center py-10">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Chat AI</h2>
-                  <p className="text-gray-600">Start a conversation with the AI assistant</p>
-                </div>
-              ) : (
-                messages.map((m, index) => (
-                  <div key={index} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
-                    <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === 'user' ? 'bg-gray-200 ml-4' : 'bg-black text-white mr-4'
-                        }`}>
-                        {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : <BotMessageSquare className="w-5 h-5 text-white" />}
-                      </div>
-                      <div className="flex-grow overflow-hidden">
-                        <div className="text-gray-800 break-words" onMouseUp={handleTextSelection} >{formatMessage(m.content)}</div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-          {/* Message input */}
-          <form onSubmit={handleSubmit} className="mt-4">
-            <div className="flex items-center space-x-2">
-              <Input
-                placeholder="Send a message"
-                className="flex-1"
-                value={input}
-                onChange={handleInputChange}
-              />
-              <Button type="submit" size="icon" disabled={isLoading}>
-                <Send className="h-4 w-4" />
+                }}
+                className="flex-grow flex items-center justify-center bg-[#6c47ff]"
+              >
+                <PlusIcon className="mr-2 h-4 w-4" />
+                New Chat
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-10 w-10 p-0">
+                    <ListPlus className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuItem onClick={handleOpenPromptDialog}>
+                    <PlusIcon className="mr-2 h-4 w-4" />
+                    <span>Add New Prompt</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleOpenAvailablePrompts}>
+                    <ListIcon className="mr-2 h-4 w-4" />
+                    <span>List Prompts</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Right sidebar */}
-      <Card className=" h-full flex flex-col w-[22%]">
-        <CardHeader className="border-b border-gray-200">
-          <CardTitle>List of Prompts</CardTitle>
-        </CardHeader>
-        <CardContent className="flex-grow overflow-hidden p-4">
-          <ScrollArea className="h-full">
-            {isLoadingListPrompt ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-              </div>
-            ) : error ? (
-              <p className="text-red-500 text-center">{error}</p>
-            ) : (
-              <div className="space-y-4">
-                {listPrompts.map((prompt: any) => (
-                  <Card
-                    onClick={() => {
-                      handleSelectPrompt(prompt);
-                    }}
-                    key={prompt.id}
-                    className={`cursor-pointer w-[18.5vw] transition-colors hover:bg-gray-100 `}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div onClick={() => { }} className="w-[9vw]">
-                          <h3 className="font-semibold text-lg mb-2">{prompt.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2 line-clamp-2 overflow-hidden text-ellipsis">{prompt.prompt}</p>
-                          <div className="flex items-center text-xs text-gray-500 space-x-2">
-                            <div className="flex items-center">
-                              <CalendarIcon className="w-3 h-3 mr-1" />
-                              {new Date(prompt.createdAt).toLocaleDateString()}
-                            </div>
+            <Separator className="my-4" />
+            <ScrollArea className="h-[calc(100vh-180px)] max-h-[69vh]">
+              {isLoadingChatHistory ? (
+                <div className="flex items-center justify-center h-20">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                </div>
+              ) : error ? (
+                <p className="text-red-500 text-center">{error}</p>
+              ) : (
+                chatHistoryNEW.map((chat) => (
+                  <TooltipProvider key={chat.id}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div
+                          className="mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
+                        >
+                          <div onClick={() => loadChat(chat.id)}>
+                            <h3 className="font-semibold truncate">{chat.titleChat}</h3>
+                            <p className="text-xs text-gray-500">{new Date(chat.createdAt).toLocaleString()}</p>
                           </div>
-                        </div>
-                        <div className="flex space-x-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="bg-purple-100 hover:bg-purple-200 text-purple-700"
+                            className="text-red-500 hover:bg-red-100"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setUpdatePromptId(prompt.id);
-                              setUpdatePrompt(prompt);
-                            }}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="bg-red-100 hover:bg-red-200 text-red-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openDeleteConfirmation(prompt.id, prompt.title);
+                              openDeleteChatConfirmation(chat.id, chat.titleChat);
                             }}
                           >
                             <TrashIcon className="w-4 h-4" />
                           </Button>
                         </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs">
+                        <div>
+                          <p className="font-semibold">{chat.titlePrompt}</p>
+                          <p className="text-sm text-gray-600 mt-1">{chat.prompt}</p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))
+              )}
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Main content */}
+        <Card className="flex-1 flex flex-col">
+          <CardHeader className="border-b p-3 pl-6">
+            <CardTitle className='text-lg font-semibold'>{params.titlePrompt}</CardTitle>
+            <CardDescription className='text-xs text-gray-600'>
+              {params.prompt.length > 50
+                ? params.prompt.slice(0, 50) + '...'
+                : params.prompt}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between p-4">
+            <ScrollArea className="flex-grow h-full">
+              <div className="max-w-2xl mx-auto py-4 px-4 h-[1vh]">
+                {messages.length === 0 ? (
+                  <div className="text-center py-10">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Chat AI</h2>
+                    <p className="text-gray-600">Start a conversation with the AI assistant</p>
+                  </div>
+                ) : (
+                  messages.map((m, index) => (
+                    <div key={index} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
+                      <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === 'user' ? 'bg-gray-200 ml-4' : 'bg-black text-white mr-4'
+                          }`}>
+                          {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : <BotMessageSquare className="w-5 h-5 text-white" />}
+                        </div>
+                        <div className="flex-grow overflow-hidden">
+                          <div className="text-gray-800 break-words" onMouseUp={handleTextSelection} >{formatMessage(m.content)}</div>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    </div>
+                  ))
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            )}
-          </ScrollArea>
-        </CardContent>
+            </ScrollArea>
+            {/* Message input */}
+            <form onSubmit={handleSubmit} className="mt-4">
+              <div className="flex items-center space-x-2">
+                <Input
+                  placeholder="Send a message"
+                  className="flex-1"
+                  value={input}
+                  onChange={handleInputChange}
+                />
+                <Button type="submit" size="icon" disabled={isLoading}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
 
-      </Card>
-      {/* PromptDialog */}
-      <PromptDialog
-        isOpen={isPromptDialogOpen}
-        onClose={handleClosePromptDialog}
-        onPromptSaved={handlePromptSaved}
-      />
+        {/* Right sidebar */}
+        <Card className=" h-full flex flex-col w-[22%]">
+          <CardHeader className="border-b border-gray-200">
+            <CardTitle className='text-lg font-semibold'>List of Prompts</CardTitle>
+          </CardHeader>
+          <CardContent className="flex-grow overflow-hidden p-4">
+            <ScrollArea className="h-full">
+              {isLoadingListPrompt ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                </div>
+              ) : error ? (
+                <p className="text-red-500 text-center">{error}</p>
+              ) : (
+                <div className="space-y-4">
+                  {listPrompts.map((prompt: any) => (
+                    <Card
+                      onClick={() => {
+                        handleSelectPrompt(prompt);
+                      }}
+                      key={prompt.id}
+                      className={`cursor-pointer w-[18.5vw] transition-colors hover:bg-gray-100 `}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div onClick={() => { }} className="w-[9vw]">
+                            <h3 className="font-semibold text-sm mb-2">{prompt.title}</h3>
+                            <p className="text-xs text-gray-600 mb-2 line-clamp-2 overflow-hidden text-ellipsis">{prompt.prompt}</p>
+                            <div className="flex items-center text-xs text-gray-500 space-x-2">
+                              <div className="flex items-center">
+                                <CalendarIcon className="w-3 h-3 mr-1" />
+                                {new Date(prompt.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="bg-purple-100 hover:bg-purple-200 text-purple-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUpdatePromptId(prompt.id);
+                                setUpdatePrompt(prompt);
+                              }}
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="bg-red-100 hover:bg-red-200 text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openDeleteConfirmation(prompt.id, prompt.title);
+                              }}
+                            >
+                              <TrashIcon className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </CardContent>
 
-      {/* DeleteConfirmationPopup */}
-      <DeleteConfirmationPopup
-        isOpen={!!deletePromptId}
-        onClose={closeDeleteConfirmation}
-        onConfirm={async () => {
-          if (deletePromptId) {
-            await handleDelete(deletePromptId);
-          }
-        }}
-        promptTitle={deletePromptTitle}
-      />
-      {/* UpdatePromptPopup */}
-      <UpdatePromptPopup
-        isOpen={!!updatePromptId}
-        onClose={() => {
-          setUpdatePromptId(null);
-          setUpdatePrompt(null);
-        }}
-        prompt={updatePrompt}
-        onUpdate={fetchPrompts}
-      />
+        </Card>
+        {/* PromptDialog */}
+        <PromptDialog
+          isOpen={isPromptDialogOpen}
+          onClose={handleClosePromptDialog}
+          onPromptSaved={handlePromptSaved}
+        />
 
-      {/* AvailablePromptsPopup */}
-      <AvailablePromptsPopup
-        defaultPrompt={DEFAULT_PROMPT}
-        onSetDefaultPrompt={() => { }}
-        isOpen={isAvailablePromptsOpen}
-        onClose={handleCloseAvailablePrompts}
-        onSelectPrompt={handleSelectPrompt}
-      />
+        {/* DeleteConfirmationPopup */}
+        <DeleteConfirmationPopup
+          isOpen={!!deletePromptId}
+          onClose={closeDeleteConfirmation}
+          onConfirm={async () => {
+            if (deletePromptId) {
+              await handleDelete(deletePromptId);
+            }
+          }}
+          promptTitle={deletePromptTitle}
+        />
+        {/* UpdatePromptPopup */}
+        <UpdatePromptPopup
+          isOpen={!!updatePromptId}
+          onClose={() => {
+            setUpdatePromptId(null);
+            setUpdatePrompt(null);
+          }}
+          prompt={updatePrompt}
+          onUpdate={fetchPrompts}
+        />
 
-      {/* delete history */}
-      <DeleteConfirmationPopup
-        isOpen={!!deleteChatId}
-        onClose={closeDeleteChatConfirmation}
-        onConfirm={async () => {
-          if (deleteChatId) {
-            await deleteChat(deleteChatId);
-          }
-        }}
-        promptTitle={deleteChatTitle}
-      />
+        {/* AvailablePromptsPopup */}
+        <AvailablePromptsPopup
+          defaultPrompt={DEFAULT_PROMPT}
+          onSetDefaultPrompt={() => { }}
+          isOpen={isAvailablePromptsOpen}
+          onClose={handleCloseAvailablePrompts}
+          onSelectPrompt={handleSelectPrompt}
+        />
 
-      <Popover open={isPopperOpen} onOpenChange={setIsPopperOpen}>
-        <PopoverTrigger asChild>
-          <div style={{ position: 'absolute', top: popperPosition.top, left: popperPosition.left }}>
-            {/* This div is invisible and just used for positioning */}
-          </div>
-        </PopoverTrigger>
-        <PopoverContent style={{ width: '100%', height: '100%' }}>
-          <Button
-            className="rounded-none text-purple-500"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              handleInputChange({ target: { value: `Regarding the following text: "${selectedText}", can you explain or elaborate on it?` } } as React.ChangeEvent<HTMLInputElement>);
-              setIsPopperOpen(false);
-            }}
-          >
-            <Magic className="h-5 w-5" />
-            Ask AI
-          </Button>
-        </PopoverContent>
-      </Popover>
-    </div>
+        {/* delete history */}
+        <DeleteConfirmationPopup
+          isOpen={!!deleteChatId}
+          onClose={closeDeleteChatConfirmation}
+          onConfirm={async () => {
+            if (deleteChatId) {
+              await deleteChat(deleteChatId);
+            }
+          }}
+          promptTitle={deleteChatTitle}
+        />
+
+        <Popover open={isPopperOpen} onOpenChange={setIsPopperOpen}>
+          <PopoverTrigger asChild>
+            <div style={{ position: 'absolute', top: popperPosition.top, left: popperPosition.left }}>
+              {/* This div is invisible and just used for positioning */}
+            </div>
+          </PopoverTrigger>
+          <PopoverContent style={{ width: '100%', height: '100%' }}>
+            <Button
+              className="rounded-none text-purple-500"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                handleInputChange({ target: { value: `Regarding the following text: "${selectedText}", can you explain or elaborate on it?` } } as React.ChangeEvent<HTMLInputElement>);
+                setIsPopperOpen(false);
+              }}
+            >
+              <Magic className="h-5 w-5" />
+              Ask AI
+            </Button>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </>
+
   );
 }

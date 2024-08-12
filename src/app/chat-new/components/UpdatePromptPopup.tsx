@@ -50,7 +50,7 @@ export function UpdatePromptPopup({ isOpen, onClose, prompt, onUpdate }: UpdateP
     const [tempTopP, setTempTopP] = useState(prompt?.topP || 1);
     const [tempPresencePenalty, setTempPresencePenalty] = useState(prompt?.presencePenalty || 0);
     const [tempFrequencyPenalty, setTempFrequencyPenalty] = useState(prompt?.frequencyPenalty || 0);
-    const [tempMaxTokens, setTempMaxTokens] = useState(prompt?.maxTokens || 2048);
+    const [tempMaxTokens, setTempMaxTokens] = useState(prompt?.maxTokens || 150);
     
 
     useEffect(() => {
@@ -62,7 +62,7 @@ export function UpdatePromptPopup({ isOpen, onClose, prompt, onUpdate }: UpdateP
             setTempTopP(prompt.topP || 1);
             setTempPresencePenalty(prompt.presencePenalty || 0);
             setTempFrequencyPenalty(prompt.frequencyPenalty || 0);
-            setTempMaxTokens(prompt.maxTokens || 2048);
+            setTempMaxTokens(prompt.maxTokens || 150);
         }
     }, [prompt]);
 

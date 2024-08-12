@@ -114,3 +114,12 @@ model ChatHistoryNEW {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+model RateLimitedUsers {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  feature   String
+  limit     Int
+  timestamp DateTime @default(now())
+}

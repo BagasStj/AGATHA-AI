@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, ScrollText, Upload } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -27,6 +29,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     const [isLoading, setIsLoading] = useState(false);
     const [description, setDescription] = useState('');
     const { user } = useUser();
+
+    const { toast } = useToast();
 
     useEffect(() => {
         if (node) {
@@ -52,7 +56,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             formData.append("pineconeIndex", `flowise-ai-${user.username}`)
         }
         try {
-            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/5915e20a-62dd-468b-81b7-41bd6f7f915d', {
+            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/52ff5341-453e-48b5-a243-fe203b7c65fa', {
                 method: 'POST',
                 body: formData
             });
@@ -79,6 +83,20 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             alert('Please upload a file before saving.');
             return;
         }
+
+        const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+
+        if (!success) {
+            await logRateLimitedRequest(user.id, user.username || '');
+            toast({
+                title: "Rate Limit Exceeded",
+                description: "You have reached your request limit for the day.",
+                duration: 5000,
+                variant: "destructive",
+            });
+            return;
+        }
+
         try {
             setIsLoading(true);
             const reader = new FileReader();
@@ -106,16 +124,16 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     fileName: fileName,
                     description: description,
                 });
-            setIsLoading(false);
+                setIsLoading(false);
 
             };
             reader.readAsDataURL(file);
-        
+
         } catch (error) {
             console.error('Error in handleSave:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
-         
+
         }
     };
     const handleFileUpload = (uploadedFile: File) => {

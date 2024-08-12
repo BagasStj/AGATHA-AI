@@ -16,6 +16,8 @@ import {
   DialogContentChat,
 } from "@/components/ui/dialog";
 import { useUser } from '@clerk/nextjs';
+import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ChatDialogProps {
   onClose: () => void;
@@ -60,6 +62,8 @@ const MessageInput = ({ onSend }: { onSend: (message: string) => void }) => {
   );
 };
 
+
+
 const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, edges, isNodeInfoCardOpen }) => {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([
     { "role": "ai", "content": "Hi there! How can I help?" }
@@ -68,6 +72,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   const [isLoading, setIsLoading] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { user } = useUser();
+  const { toast } = useToast();
+
 
 
   const scrollToBottom = useCallback(() => {
@@ -104,7 +110,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         formData.append("question", input);
 
         const response = await fetch(
-          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/5915e20a-62dd-468b-81b7-41bd6f7f915d",
+          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/52ff5341-453e-48b5-a243-fe203b7c65fa",
           {
             method: "POST",
             body: formData
@@ -214,6 +220,21 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   };
 
   const handleSend = useCallback(async (input: string) => {
+    if (!user) return;
+
+    const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+
+    if (!success) {
+      await logRateLimitedRequest(user.id, user?.username || '');
+      toast({
+        title: "Rate Limit Exceeded",
+        description: "You have reached your request limit for the day.",
+        duration: 5000,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prevMessages => [...prevMessages, userMessage]);

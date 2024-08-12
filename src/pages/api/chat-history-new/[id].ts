@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import {prisma} from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
@@ -23,10 +23,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'GET') {
     try {
-      const { id } = req.query;
-
+      const { id ,userId} = req.query;
       const updatedChat = await prisma.chatHistoryNEW.findMany({
-        where: { id: id as string },
+        where: {
+           id: id as string ,
+           userId: userId as string
+
+        },
       });
 
       res.status(200).json(updatedChat);

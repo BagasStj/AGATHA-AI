@@ -109,7 +109,8 @@ export default function PhoneCall() {
         const response = await fetch('https://api.vapi.ai/file', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${VAPI_PUBLIC_KEY}`,
+            'Authorization': `Bearer de600373-cb5e-46c7-9a13-40b71abb243d`,
+             'Content-Type': 'multipart/form-data'
           },
           body: formData,
         });

@@ -24,6 +24,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { User } from '@clerk/nextjs/server';
 import { useHotkeys } from 'react-hotkeys-hook';
 import DocumentViewPopup from './components/DocumentViewPopup';
+import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 
 interface NodeData {
   label: string;
@@ -448,6 +449,20 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
         });
         return;
       }
+
+      const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+
+      if (!success) {
+          await logRateLimitedRequest(user.id, user.username || '');
+          toast({
+              title: "Rate Limit Exceeded",
+              description: "You have reached your request limit for the day.",
+              duration: 5000,
+              variant: "destructive",
+          });
+          return;
+      }
+
 
       try {
         const call = await vapiClient.start({

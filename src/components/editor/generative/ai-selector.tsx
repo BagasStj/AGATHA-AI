@@ -30,6 +30,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
     // id: "novel",
     api: "/api/generate",
     onResponse: (response) => {
+      console.log(' ', response)
       if (response.status === 429) {
         toast.error("You have reached your request limit for the day.");
         return;

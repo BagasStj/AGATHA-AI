@@ -99,51 +99,51 @@ const Editor = ({ initialValue, onChange }: EditorProp) => {
                     slotAfter={<ImageResizer />}
                   >
                     {/* {isNovelTitleSelected && ( */}
-                      <>
-                        <EditorCommand className="z-50 h-auto max-h-[330px] w-72 overflow-y-auto rounded-md border border-muted bg-popover p-1 shadow-md transition-all">
-                          <EditorCommandEmpty className="px-2 py-1.5 text-sm text-muted-foreground">
-                            No results
-                          </EditorCommandEmpty>
-                          <EditorCommandList className="space-y-1">
-                            {Array.isArray(suggestionItems) && suggestionItems.map((item) => (
-                              <EditorCommandItem
-                                value={item.title}
-                                onCommand={(val) => item.command?.(val)}
-                                className="flex w-full items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
-                                key={item.title}
-                              >
-                                <div className="flex h-5 w-5 items-center justify-center rounded-sm border border-input bg-background">
-                                  {item.icon}
-                                </div>
-                                <div>
-                                  <p className="font-medium">{item.title}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {item.description}
-                                  </p>
-                                </div>
-                              </EditorCommandItem>
-                            ))}
-                          </EditorCommandList>
-                        </EditorCommand>
+                    <>
+                      <EditorCommand className="z-50 h-auto max-h-[330px] w-72 overflow-y-auto rounded-md border border-muted bg-popover p-1 shadow-md transition-all">
+                        <EditorCommandEmpty className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No results
+                        </EditorCommandEmpty>
+                        <EditorCommandList className="space-y-1">
+                          {Array.isArray(suggestionItems) && suggestionItems.map((item) => (
+                            <EditorCommandItem
+                              value={item.title}
+                              onCommand={(val) => item.command?.(val)}
+                              className="flex w-full items-center space-x-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                              key={item.title}
+                            >
+                              <div className="flex h-5 w-5 items-center justify-center rounded-sm border border-input bg-background">
+                                {item.icon}
+                              </div>
+                              <div>
+                                <p className="font-medium">{item.title}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </EditorCommandItem>
+                          ))}
+                        </EditorCommandList>
+                      </EditorCommand>
 
-                        <EditorBubble
-                          tippyOptions={{ placement: "bottom" }}
-                          className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border bg-popover shadow-md"
-                        >
-                          <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
+                      <EditorBubble
+                        tippyOptions={{ placement: "bottom" }}
+                        className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border bg-popover shadow-md"
+                      >
+                        <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
+                          <Separator orientation="vertical" />
+                          <NodeSelector open={openNode} onOpenChange={setOpenNode} />
                           <Separator orientation="vertical" />
 
-                            {/* <Separator orientation="vertical" />
-                            <NodeSelector open={openNode} onOpenChange={setOpenNode} />
-                            <Separator orientation="vertical" />
-                            <LinkSelector open={openLink} onOpenChange={setOpenLink} />
-                            <Separator orientation="vertical" />
-                            <Separator orientation="vertical" />
-                            <Separator orientation="vertical" />
-                            <ColorSelector open={openColor} onOpenChange={setOpenColor} /> */}
-                          </GenerativeMenuSwitch>
-                        </EditorBubble>
-                      </>
+                          <LinkSelector open={openLink} onOpenChange={setOpenLink} />
+                          <Separator orientation="vertical" />
+                          <Separator orientation="vertical" />
+                          <TextButtons />
+                          <Separator orientation="vertical" />
+                          <ColorSelector open={openColor} onOpenChange={setOpenColor} />
+                        </GenerativeMenuSwitch>
+                      </EditorBubble>
+                    </>
 
                     {/* // )} */}
                   </EditorContent>

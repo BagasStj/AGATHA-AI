@@ -33,14 +33,14 @@ const field_vapi = {
     "endCallMessage": "terimakasih"
   },
   "phoneNumber": {
-    "twilioPhoneNumber": "+12564726229",
-    "twilioAccountSid": "AC4f0d30af7d8a3d8be4bcd1ea9c72ddac",
-    "twilioAuthToken": "a9c7b796c47dd3662b5abfc4d712d394"
+    "twilioPhoneNumber": "",
+    "twilioAccountSid": "",
+    "twilioAuthToken": ""
   },
   "customer": {
-    "number": "+6287729723438"
+    "number": ""
   },
-  "phoneNumberId": "41661b76-9f18-42ac-9f16-e15ee5bef6f0"
+  "phoneNumberId": ""
 }
 
 export default function PhoneCall() {

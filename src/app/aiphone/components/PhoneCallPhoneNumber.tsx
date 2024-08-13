@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from '@clerk/nextjs';
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+const VAPI_PRIVATE_KEY = process.env.NEXT_PUBLIC_VAPI_PRIVATE_KEY;
 const field_vapi = {
   "assistant": {
     "transcriber": {
@@ -88,7 +89,7 @@ export default function PhoneCall() {
 
   // In the useEffect hook
   useEffect(() => {
-    if (VAPI_PUBLIC_KEY) {
+    if (VAPI_PUBLIC_KEY && VAPI_PRIVATE_KEY) {
       const client = new VapiClient(VAPI_PUBLIC_KEY);
       setVapiClient(client);
     }
@@ -126,47 +127,47 @@ export default function PhoneCall() {
 
     try {
       setIsCallActive(true);
-      // const phoneNumberResponse = await fetch('https://api.vapi.ai/phone-number/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': 'Bearer de600373-cb5e-46c7-9a13-40b71abb243d',
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     number: defaultCall.phoneNumber.twilioPhoneNumber,
-      //     name: contact,
-      //     twilioAccountSid: defaultCall.phoneNumber.twilioAccountSid,
-      //     twilioAuthToken: defaultCall.phoneNumber.twilioAuthToken,
-      //     provider: "twilio"
-      //   })
-      // });
+      const phoneNumberResponse = await fetch('https://api.vapi.ai/phone-number/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${VAPI_PRIVATE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          number: defaultCall.phoneNumber.twilioPhoneNumber,
+          name: contact,
+          twilioAccountSid: defaultCall.phoneNumber.twilioAccountSid,
+          twilioAuthToken: defaultCall.phoneNumber.twilioAuthToken,
+          provider: "twilio"
+        })
+      });
 
-      // if (!phoneNumberResponse.ok) {
-      //   throw new Error(`HTTP error! status: ${phoneNumberResponse.status}`);
-      // }
+      if (!phoneNumberResponse.ok) {
+        throw new Error(`HTTP error! status: ${phoneNumberResponse.status}`);
+      }
 
-      // const phoneNumberData = await phoneNumberResponse.json();
-      // console.log('Phone Number API response:', phoneNumberData);
+      const phoneNumberData = await phoneNumberResponse.json();
+      console.log('Phone Number API response:', phoneNumberData);
 
       // Only proceed with /call/phone if phone-number/ was successful
-      // const callResponse = await fetch('https://api.vapi.ai/call/phone', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Authorization': 'Bearer de600373-cb5e-46c7-9a13-40b71abb243d',
-      //     'Content-Type': 'application/json'
-      //   },
-      //   body: JSON.stringify({
-      //     ...defaultCall,
-      //     phoneNumberId: phoneNumberData.id
-      //   })
-      // });
+      const callResponse = await fetch('https://api.vapi.ai/call/phone', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${VAPI_PRIVATE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...defaultCall,
+          phoneNumberId: phoneNumberData.id
+        })
+      });
 
-      // if (!callResponse.ok) {
-      //   throw new Error(`HTTP error! status: ${callResponse.status}`);
-      // }
+      if (!callResponse.ok) {
+        throw new Error(`HTTP error! status: ${callResponse.status}`);
+      }
 
-      // const callData = await callResponse.json();
-      // console.log('Call API response:', callData);
+      const callData = await callResponse.json();
+      console.log('Call API response:', callData);
 
       // Save call history
 
@@ -179,7 +180,7 @@ export default function PhoneCall() {
           userId: user?.id,
           username: user?.username,
           phoneNumber: defaultCall.customer.number,
-          phoneNumberId: '12345',
+          phoneNumberId: callData.id,
           contact: contact,
           twilioPhoneNumber: defaultCall.phoneNumber.twilioPhoneNumber,
           timestamp: new Date().toISOString()

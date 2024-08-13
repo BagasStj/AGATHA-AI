@@ -10,6 +10,7 @@ import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone } from 'lucide-react'
 import VapiClient from '@vapi-ai/web';
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+const VAPI_PRIVATE_KEY = process.env.NEXT_PUBLIC_VAPI_PRIVATE_KEY;
 
 export default function PhoneCall() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -109,7 +110,7 @@ export default function PhoneCall() {
         const response = await fetch('https://api.vapi.ai/file', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer de600373-cb5e-46c7-9a13-40b71abb243d`,
+            'Authorization': `Bearer ${VAPI_PRIVATE_KEY}`,
              'Content-Type': 'multipart/form-data'
           },
           body: formData,

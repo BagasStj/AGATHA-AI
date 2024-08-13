@@ -123,3 +123,14 @@ model RateLimitedUsers {
   limit     Int
   timestamp DateTime @default(now())
 }
+
+model HistoryCalls {
+  id        String   @id @default(cuid())
+  userId    String
+  username  String
+  phoneNumberId String
+  phoneNumber String
+  contact String
+  twilioPhoneNumber String
+  timestamp DateTime @default(now())
+}

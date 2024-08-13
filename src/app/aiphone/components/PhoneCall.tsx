@@ -166,7 +166,7 @@ export default function PhoneCall() {
       <div className="bg-white rounded-lg shadow-lg p-6 w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold flex items-center">
-            <Phone className="mr-2" /> AI Phone Settings
+            <Phone className="mr-2" /> AI Phone Assistant
           </h2>
           <Button
             onClick={isCallActive ? endCall : () => startCall()}
@@ -185,7 +185,7 @@ export default function PhoneCall() {
         </div>
         <div className='flex'>
           <div className="w-[64vw] mr-[1vw]">
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label htmlFor="knowledgeBase" className="block text-sm font-medium text-gray-700 mb-1">
                 Knowledge Base
               </label>
@@ -199,7 +199,7 @@ export default function PhoneCall() {
               {knowledgeBaseName && (
                 <p className="mt-1 text-sm text-gray-500">Selected file: {knowledgeBaseName}</p>
               )}
-            </div>
+            </div> */}
             <div className="mb-4">
               <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
                 First Message

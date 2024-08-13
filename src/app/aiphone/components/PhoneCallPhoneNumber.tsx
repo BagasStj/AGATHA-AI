@@ -33,15 +33,6 @@ const field_vapi = {
     "firstMessage": "hi aku adalah AI Agatha yang dibuat oleh orang ganteng",
     "endCallMessage": "terimakasih"
   },
-  "phoneNumber": {
-    "twilioPhoneNumber": "",
-    "twilioAccountSid": "",
-    "twilioAuthToken": ""
-  },
-  "customer": {
-    "number": ""
-  },
-  "phoneNumberId": ""
 }
 
 export default function PhoneCall() {
@@ -74,14 +65,14 @@ export default function PhoneCall() {
       endCallMessage: "terimakasih"
     },
     phoneNumber: {
-      twilioPhoneNumber: field_vapi.phoneNumber.twilioPhoneNumber,
-      twilioAccountSid: field_vapi.phoneNumber.twilioAccountSid,
-      twilioAuthToken: field_vapi.phoneNumber.twilioAuthToken
+      twilioPhoneNumber: "",
+      twilioAccountSid: "",
+      twilioAuthToken: ""
     },
     customer: {
-      number: field_vapi.customer.number
+      number: ""
     },
-    phoneNumberId: field_vapi.phoneNumberId
+    phoneNumberId: ""
   });
   const [callHistory, setCallHistory] = useState<any[]>([]);
 

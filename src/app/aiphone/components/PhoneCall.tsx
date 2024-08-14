@@ -74,27 +74,27 @@ export default function PhoneCall() {
 
   const startCall = useCallback(async () => {
     
-    if (!user?.id) {
-      toast({
-        title: "Error",
-        description: "User is not authenticated.",
-        duration: 3000,
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!user?.id) {
+    //   toast({
+    //     title: "Error",
+    //     description: "User is not authenticated.",
+    //     duration: 3000,
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
-    const { success, remaining } = await checkRateLimit(user.id);
-    if (!success) {
-      toast({
-        title: "Rate Limit Exceeded",
-        description: `You have reached your daily call limit. Please try again later.`,
-        duration: 3000,
-        variant: "destructive",
-      });
-      await logRateLimitedRequest(user.id, user.username || '');
-      return;
-    }
+    // const { success, remaining } = await checkRateLimit(user.id, 'aiphone');
+    // if (!success) {
+    //   toast({
+    //     title: "Rate Limit Exceeded",
+    //     description: `You have reached your daily call limit. Please try again later.`,
+    //     duration: 3000,
+    //     variant: "destructive",
+    //   });
+    //   await logRateLimitedRequest(user.id, user.username || '', 'aiphone');
+    //   return;
+    // }
     
     if (!vapiClient) {
       toast({

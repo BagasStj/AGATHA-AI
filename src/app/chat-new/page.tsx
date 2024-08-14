@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Toaster } from '@/components/ui/toaster';
 import { isSameDay } from 'date-fns';
+import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 
 
 const DEFAULT_PROMPT: any = {
@@ -237,12 +238,26 @@ export default function ChatNewPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    try {
+    // try {
+    //   const { success, limit, reset, remaining } = await checkRateLimit(user?.id || '', 'chat');
+
+    //   if (!success) {
+    //     await logRateLimitedRequest(user?.id || '', user?.username || '', 'chat');
+    //     toast({
+    //       title: "Rate Limit Exceeded",
+    //       description: "You have reached your request limit for chat. Please try again later.",
+    //       duration: 5000,
+    //       variant: "destructive",
+    //     });
+    //     return;
+    //   }
+
+    //   await originalHandleSubmit(e);
+    // } catch (error: any) {
+    //   console.error('Error submitting chat:', error);
+    //   handleApiError(error);
+    // }
       await originalHandleSubmit(e);
-    } catch (error: any) {
-      console.error('Error submitting chat:', error);
-      handleApiError(error);
-    }
     setSelectedText('');
     setIsPopperOpen(false);
   };

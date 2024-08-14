@@ -84,18 +84,18 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             return;
         }
 
-        const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+        // const { success, limit, reset, remaining } = await checkRateLimit(user.id, 'flow');
 
-        if (!success) {
-            await logRateLimitedRequest(user.id, user.username || '');
-            toast({
-                title: "Rate Limit Exceeded",
-                description: "You have reached your request limit for the day.",
-                duration: 5000,
-                variant: "destructive",
-            });
-            return;
-        }
+        // if (!success) {
+        //     await logRateLimitedRequest(user.id, user.username || '', 'flow');
+        //     toast({
+        //         title: "Rate Limit Exceeded",
+        //         description: "You have reached your request limit for the day.",
+        //         duration: 5000,
+        //         variant: "destructive",
+        //     });
+        //     return;
+        // }
 
         try {
             setIsLoading(true);

@@ -222,18 +222,18 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   const handleSend = useCallback(async (input: string) => {
     if (!user) return;
 
-    const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+    // const { success, limit, reset, remaining } = await checkRateLimit(user.id , 'flow');
 
-    if (!success) {
-      await logRateLimitedRequest(user.id, user?.username || '');
-      toast({
-        title: "Rate Limit Exceeded",
-        description: "You have reached your request limit for the day.",
-        duration: 5000,
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!success) {
+    //   await logRateLimitedRequest(user.id, user?.username || '', 'flow');
+    //   toast({
+    //     title: "Rate Limit Exceeded",
+    //     description: "You have reached your request limit for the day.",
+    //     duration: 5000,
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     setIsLoading(true);
     const userMessage = { role: 'user' as const, content: input };

@@ -18,23 +18,23 @@ export async function POST(req: Request) {
     return new Response("User ID is required for rate limiting", { status: 400 });
   }
 
-  const { success, limit, reset, remaining } = await checkRateLimit(userId);
+  // const { success, limit, reset, remaining } = await checkRateLimit(userId, 'chat');
 
-  if (!success) {
-    await logRateLimitedRequest(userId, username);
+  // if (!success) {
+  //   await logRateLimitedRequest(userId, username, 'chat');
 
-    return new Response(JSON.stringify({
-      message: "You have reached your request limit for the day.",
-    }), {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "X-RateLimit-Limit": limit.toString(),
-        "X-RateLimit-Remaining": remaining.toString(),
-        "X-RateLimit-Reset": reset.toString(),
-      },
-    });
-  }
+  //   return new Response(JSON.stringify({
+  //     message: "You have reached your request limit for the day.",
+  //   }), {
+  //     status: 429,
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "X-RateLimit-Limit": limit.toString(),
+  //       "X-RateLimit-Remaining": remaining.toString(),
+  //       "X-RateLimit-Reset": reset.toString(),
+  //     },
+  //   });
+  // }
 
   const langfuse = process.env.LANGFUSE_SECRET_KEY
     ? new Langfuse({

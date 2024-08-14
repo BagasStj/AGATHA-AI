@@ -42,7 +42,8 @@ const edgeTypes: EdgeTypes = {
 
 
 const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-
+const KV_REST_API_URL = process.env.KV_REST_API_URL;
+const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 const initialNodes: Node[] = [];
 
@@ -450,18 +451,18 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
         return;
       }
 
-      const { success, limit, reset, remaining } = await checkRateLimit(user.id);
+      // const { success, limit, reset, remaining } = await checkRateLimit(user.id, 'flow');
 
-      if (!success) {
-          await logRateLimitedRequest(user.id, user.username || '');
-          toast({
-              title: "Rate Limit Exceeded",
-              description: "You have reached your request limit for the day.",
-              duration: 5000,
-              variant: "destructive",
-          });
-          return;
-      }
+      // if (!success) {
+      //   await logRateLimitedRequest(user.id, user.username || '', 'flow');
+      //   toast({
+      //     title: "Rate Limit Exceeded",
+      //     description: "You have reached your request limit for Flow. Please try again later.",
+      //     duration: 5000,
+      //     variant: "destructive",
+      //   });
+      //   return;
+      // }
 
 
       try {
@@ -505,7 +506,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
     } else {
       setShowChatDialog(true);
     }
-  }, [nodes, edges, vapiClient, toast, defaultCall, setSelectedNode]);
+  }, [nodes, edges, vapiClient, toast, defaultCall, setSelectedNode, user]);
 
   const handleVapiDisconnect = useCallback(() => {
     if (vapiClient) {

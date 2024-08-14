@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -10,6 +13,8 @@ import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone, Brain, BookUser, Tab
 import VapiClient from '@vapi-ai/web';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from '@clerk/nextjs';
+import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
+import CallHistory from './CallHistory';
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 const VAPI_PRIVATE_KEY = process.env.NEXT_PUBLIC_VAPI_PRIVATE_KEY;
@@ -17,7 +22,8 @@ const field_vapi = {
   "assistant": {
     "transcriber": {
       "provider": "deepgram",
-      "model": "nova-2"
+      "model": "nova-2",
+      "language": "id",
     },
     "name": "leo",
     "model": {
@@ -35,6 +41,71 @@ const field_vapi = {
   },
 }
 
+const voice = [
+  {
+    id: "bVMeCyTHy58xNoL34h3p",
+    name: "Jeremy",
+  },
+  {
+    id: "SOYHLrjzK2X1ezoPC6cr",
+    name: "Harry",
+  },
+  {
+    id: "jBpfuIE2acCO8z3wKNLl",
+    name: "Gigi",
+  },
+  {
+    id: "pNInz6obpgDQGcFmaJgB",
+    name: "Adam",
+  },
+  {
+    id: "TxGEqnHWrfWFTfGW9XjX",
+    name: "Josh",
+  },
+  {
+    id: "FGY2WhTYpPnrIDTdsKH5",
+    name: "Laura",
+  },
+  {
+    id: "sarah",
+    name: "Sarah",
+  },
+]
+
+const PhoneCallSchema = z.object({
+  assistant: z.object({
+    transcriber: z.object({
+      model: z.string(),
+      language: z.string(),
+      provider: z.string(),
+    }),
+    name: z.string().min(1, "Assistant name is required"),
+    firstMessage: z.string().min(1, "First message is required"),
+    model: z.object({
+      provider: z.string(),
+      model: z.enum(["gpt-3.5-turbo", "gpt-4"]),
+      systemPrompt: z.string().min(1, "System prompt is required"),
+      temperature: z.number().min(0).max(2),
+    }),
+    voice: z.object({
+      provider: z.literal("11labs"),
+      voiceId: z.string().min(1, "Voice ID is required"),
+    }),
+    language: z.string(),
+    endCallMessage: z.string(),
+  }),
+  phoneNumber: z.object({
+    twilioPhoneNumber: z.string().min(1, "Twilio phone number is required"),
+    twilioAccountSid: z.string().min(1, "Twilio Account SID is required"),
+    twilioAuthToken: z.string().min(1, "Twilio Auth Token is required"),
+  }),
+  customer: z.object({
+    number: z.string().min(1, "Customer number is required"),
+  }),
+});
+
+type PhoneCallFormData = z.infer<typeof PhoneCallSchema>;
+
 export default function PhoneCall() {
   const [isCallActive, setIsCallActive] = useState(false);
   const [callStatus, setCallStatus] = useState('');
@@ -43,70 +114,85 @@ export default function PhoneCall() {
   const [vapiClient, setVapiClient] = useState<VapiClient | null>(null);
   const [activeCall, setActiveCall] = useState<any>(null);
   const [contact, setContact] = useState<string>('');
-  const [defaultCall, setDefaultCall] = useState<any>({
-    assistant: {
-      transcriber: {
-        provider: "deepgram",
-        model: "nova-2"
+  const [refreshHistory, setRefreshHistory] = useState(0);
+
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<PhoneCallFormData>({
+    resolver: zodResolver(PhoneCallSchema),
+    defaultValues: {
+      assistant: {
+        name: field_vapi.assistant.name,
+        firstMessage: field_vapi.assistant.firstMessage,
+        model: {
+          provider: "openai",
+          model: "gpt-3.5-turbo",
+          systemPrompt: field_vapi.assistant.model.systemPrompt,
+          temperature: 0.7,
+        },
+        transcriber: {
+          model: "nova-2",
+          language: "id",
+          provider: "deepgram"
+        },
+        voice: {
+          provider: "11labs",
+          voiceId: field_vapi.assistant.voice.voiceId,
+        },
+        language: "en",
+        endCallMessage: field_vapi.assistant.endCallMessage,
       },
-      name: "leo",
-      model: {
-        provider: "openai",
-        model: "gpt-3.5-turbo",
-        systemPrompt: field_vapi.assistant.model.systemPrompt,
-        temperature: 0.7,
+      phoneNumber: {
+        twilioPhoneNumber: "",
+        twilioAccountSid: "",
+        twilioAuthToken: "",
       },
-      voice: {
-        provider: "11labs",
-        voiceId: "matilda"
+      customer: {
+        number: "",
       },
-      language: "en",
-      firstMessage: "hi aku adalah AI Agatha yang dibuat oleh orang ganteng",
-      endCallMessage: "terimakasih"
     },
-    phoneNumber: {
-      twilioPhoneNumber: "",
-      twilioAccountSid: "",
-      twilioAuthToken: ""
-    },
-    customer: {
-      number: ""
-    },
-    phoneNumberId: ""
   });
-  const [callHistory, setCallHistory] = useState<any[]>([]);
-
-
 
   // In the useEffect hook
   useEffect(() => {
-    if (VAPI_PUBLIC_KEY && VAPI_PRIVATE_KEY) {
+    if (VAPI_PUBLIC_KEY) {
       const client = new VapiClient(VAPI_PUBLIC_KEY);
       setVapiClient(client);
     }
   }, []);
-  useEffect(() => {
-    const fetchCallHistory = async () => {
-      if (user?.id) {
-        try {
-          const response = await fetch(`/api/call-history?userId=${user.id}`);
-          if (response.ok) {
-            const data = await response.json();
-            setCallHistory(data);
-          } else {
-            console.error('Failed to fetch call history');
-          }
-        } catch (error) {
-          console.error('Error fetching call history:', error);
-        }
-      }
-    };
-  
-    fetchCallHistory();
-  }, [user]);
 
-  const startCall = useCallback(async () => {
+  const startCall = useCallback(async (data: PhoneCallFormData) => {
+
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User is not authenticated.",
+        duration: 3000,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const { success, remaining } = await checkRateLimit(user.id);
+    if (!success) {
+      toast({
+        title: "Rate Limit Exceeded",
+        description: `You have reached your daily call limit. Please try again later.`,
+        duration: 3000,
+        variant: "destructive",
+      });
+      await logRateLimitedRequest(user.id, user.username || '');
+      return;
+    }
+
     if (!vapiClient) {
+      toast({
+        title: "Error",
+        description: "Vapi client is not initialized.",
+        duration: 3000,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!VAPI_PRIVATE_KEY) {
       toast({
         title: "Error",
         description: "Vapi client is not initialized.",
@@ -118,6 +204,7 @@ export default function PhoneCall() {
 
     try {
       setIsCallActive(true);
+      console.log('VAPI_PRIVATE_KEY',   `Bearer ${VAPI_PRIVATE_KEY}`);
       const phoneNumberResponse = await fetch('https://api.vapi.ai/phone-number/', {
         method: 'POST',
         headers: {
@@ -125,10 +212,10 @@ export default function PhoneCall() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          number: defaultCall.phoneNumber.twilioPhoneNumber,
+          number: data.phoneNumber.twilioPhoneNumber,
           name: contact,
-          twilioAccountSid: defaultCall.phoneNumber.twilioAccountSid,
-          twilioAuthToken: defaultCall.phoneNumber.twilioAuthToken,
+          twilioAccountSid: data.phoneNumber.twilioAccountSid,
+          twilioAuthToken: data.phoneNumber.twilioAuthToken,
           provider: "twilio"
         })
       });
@@ -148,7 +235,7 @@ export default function PhoneCall() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...defaultCall,
+          ...data,
           phoneNumberId: phoneNumberData.id
         })
       });
@@ -170,10 +257,10 @@ export default function PhoneCall() {
         body: JSON.stringify({
           userId: user?.id,
           username: user?.username,
-          phoneNumber: defaultCall.customer.number,
+          phoneNumber: data.customer.number,
           phoneNumberId: callData.id,
           contact: contact,
-          twilioPhoneNumber: defaultCall.phoneNumber.twilioPhoneNumber,
+          twilioPhoneNumber: data.phoneNumber.twilioPhoneNumber,
           timestamp: new Date().toISOString()
         })
       });
@@ -182,6 +269,7 @@ export default function PhoneCall() {
         console.error('Failed to save call history:', await historyResponse.text());
       }
 
+      setRefreshHistory(prev => prev + 1);
 
       toast({
         title: "Success",
@@ -207,7 +295,7 @@ export default function PhoneCall() {
       });
       setIsCallActive(false);
     }
-  }, [toast, vapiClient, defaultCall, contact, user]);
+  }, [toast, vapiClient, contact, user]);
 
   const endCall = useCallback(() => {
     if (vapiClient) {
@@ -230,138 +318,108 @@ export default function PhoneCall() {
 
       </div>
 
-      <Tabs defaultValue="llm-model" className="w-full">
-        <div className="flex justify-between items-center mb-4">
+      <form onSubmit={handleSubmit(startCall)}>
+        <Tabs defaultValue="llm-model" className="w-full">
+          <div className="flex justify-between items-center mb-4">
 
-          <TabsList className="grid w-[36vw] grid-cols-3">
-            <TabsTrigger value="llm-model" className="flex items-center">
-              <Brain className="mr-2 h-4 w-4" /> LLM Model
-            </TabsTrigger>
-            <TabsTrigger value="phone-settings" className="flex items-center">
-              <BookUser className="mr-2 h-4 w-4" /> Number Settings
-            </TabsTrigger>
-            <TabsTrigger value="history-call" className="flex items-center">
-              <Table className="mr-2 h-4 w-4" /> History Call
-            </TabsTrigger>
-          </TabsList>
-          <Button
-            onClick={isCallActive ? endCall : () => startCall()}
-            className={`${isCallActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white w-[20vw]`}
-          >
-            {isCallActive ? (
-              <>
-                <PhoneOffIcon className="mr-2 h-4 w-4" /> End Call
-              </>
-            ) : (
-              <>
-                <PhoneIcon className="mr-2 h-4 w-4" /> Start Call
-              </>
-            )}
-          </Button>
-        </div>
-        <TabsContent value="llm-model" className="mt-4">
-          <div className="flex space-x-8">
-            <div className="space-y-4 w-[70%]">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Assistant Name
-                </label>
-                <Input
-                  value={defaultCall.assistant.name}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, name: e.target.value } })}
-                  id="name"
-                  placeholder="Enter assistant name"
-                  disabled={isCallActive}
-                />
-              </div>
+            <TabsList className="grid w-[36vw] grid-cols-3">
+              <TabsTrigger value="llm-model" className="flex items-center">
+                <Brain className="mr-2 h-4 w-4" /> LLM Model
+              </TabsTrigger>
+              <TabsTrigger value="phone-settings" className="flex items-center">
+                <BookUser className="mr-2 h-4 w-4" /> Number Settings
+              </TabsTrigger>
+              <TabsTrigger value="history-call" className="flex items-center">
+                <Table className="mr-2 h-4 w-4" /> History Call
+              </TabsTrigger>
+            </TabsList>
+            <Button
+              type="submit"
+              className={`${isCallActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white w-[20vw]`}
+            >
+              {isCallActive ? (
+                <>
+                  <PhoneOffIcon className="mr-2 h-4 w-4" /> End Call
+                </>
+              ) : (
+                <>
+                  <PhoneIcon className="mr-2 h-4 w-4" /> Start Call
+                </>
+              )}
+            </Button>
+          </div>
+          <TabsContent value="llm-model" className="mt-4">
+            <div className="flex space-x-8">
+              <div className="space-y-4 w-[70%]">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Assistant Name
+                  </label>
+                  <Input
+                    {...register("assistant.name")}
+                    id="name"
+                    placeholder="Enter assistant name"
+                    disabled={isCallActive}
+                  />
+                  {errors.assistant?.name && <p className="text-red-500 text-sm">{errors.assistant.name.message}</p>}
+                </div>
 
-              <div>
-                <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
-                  First Message
-                </label>
-                <Input
-                  value={defaultCall.assistant.firstMessage}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, firstMessage: e.target.value } })}
-                  id="firstMessage"
-                  placeholder="Enter the first message"
-                  disabled={isCallActive}
-                />
-              </div>
+                <div>
+                  <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
+                    First Message
+                  </label>
+                  <Input
+                    {...register("assistant.firstMessage")}
+                    id="firstMessage"
+                    placeholder="Enter the first message"
+                    disabled={isCallActive}
+                  />
+                  {errors.assistant?.firstMessage && <p className="text-red-500 text-sm">{errors.assistant.firstMessage.message}</p>}
+                </div>
 
-              <div>
-                <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700 mb-1">
-                  System Prompt
-                </label>
-                <textarea
-                  value={defaultCall.assistant.model.systemPrompt}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, model: { ...defaultCall.assistant.model, systemPrompt: e.target.value } } })}
-                  id="systemPrompt"
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  placeholder="Enter the system prompt"
-                  disabled={isCallActive}
-                ></textarea>
+                <div>
+                  <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700 mb-1">
+                    System Prompt
+                  </label>
+                  <textarea
+                    {...register("assistant.model.systemPrompt")}
+                    id="systemPrompt"
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Enter the system prompt"
+                    disabled={isCallActive}
+                  ></textarea>
+                  {errors.assistant?.model?.systemPrompt && <p className="text-red-500 text-sm">{errors.assistant.model.systemPrompt.message}</p>}
+                </div>
               </div>
-            </div>
-            <div className="space-y-4 w-[30%]">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4 w-[30%]">
+                {/* <div className="grid grid-cols-2 gap-4"> */}
                 <div>
                   <label htmlFor="voice" className="block text-sm font-medium text-gray-700 mb-1">
                     Voice
                   </label>
-                  <Select value={defaultCall.assistant.voice.voiceId} onValueChange={(value) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, voice: { ...defaultCall.assistant.voice, voiceId: value } } })} disabled={isCallActive}>
+                  <Select {...register("assistant.voice.voiceId")} disabled={isCallActive}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a voice" />
                     </SelectTrigger>
                     <SelectContent>
-                      {['burt', 'marissa', 'andrea', 'sarah', 'phillip', 'steve', 'joseph', 'myra', 'paula', 'ryan', 'drew', 'paul', 'mrb', 'matilda', 'mark'].map((voice) => (
-                        <SelectItem key={voice} value={voice}>
-                          {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                      {voice.map((voice) => (
+                        <SelectItem key={voice.id} value={voice.id}>
+                          {voice.name.charAt(0).toUpperCase() + voice.name.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.assistant?.voice?.voiceId && <p className="text-red-500 text-sm">{errors.assistant.voice.voiceId.message}</p>}
                 </div>
+                {/* </div> */}
 
-                <div>
-                  <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
-                    Language
-                  </label>
-                  <Select value={defaultCall.assistant.language} onValueChange={(value) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, language: value } })} disabled={isCallActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="es">Spanish</SelectItem>
-                      <SelectItem value="fr">French</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-
-                <div>
-                  <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">
-                    Provider
-                  </label>
-                  <Select value={defaultCall.assistant.model.provider} onValueChange={(value) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, model: { ...defaultCall.assistant.model, provider: value } } })} disabled={isCallActive}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                      {/* <SelectItem value="anthropic">Anthropic</SelectItem> */}
-                    </SelectContent>
-                  </Select>
-                </div>
-
+                {/* <div className="grid grid-cols-2 gap-4"> */}
                 <div>
                   <label htmlFor="model" className="block text-sm font-medium text-gray-700 mb-1">
                     Model
                   </label>
-                  <Select value={defaultCall.assistant.model.model} onValueChange={(value) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, model: { ...defaultCall.assistant.model, model: value } } })} disabled={isCallActive}>
+                  <Select {...register("assistant.model.model")} disabled={isCallActive}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
@@ -370,148 +428,125 @@ export default function PhoneCall() {
                       <SelectItem value="gpt-4">GPT-4</SelectItem>
                     </SelectContent>
                   </Select>
+                  {errors.assistant?.model?.model && <p className="text-red-500 text-sm">{errors.assistant.model.model.message}</p>}
                 </div>
-              </div>
-              <div className="mb-4">
-                <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
-                  Temperature
-                </label>
-                <div className="flex items-center">
-                  <Slider
-                    id="temperature"
-                    min={0}
-                    max={2}
-                    step={0.1}
-                    className="w-full mr-4"
-                    defaultValue={[defaultCall.assistant.model.temperature]}
-                    onValueChange={(value) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, model: { ...defaultCall.assistant.model, temperature: value[0] } } })}
+                {/* </div> */}
+                <div className="mb-4">
+                  <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
+                    Temperature
+                  </label>
+                  <div className="flex items-center">
+                    <Slider
+                      id="temperature"
+                      min={0}
+                      max={2}
+                      step={0.1}
+                      className="w-full mr-4"
+                      defaultValue={[watch("assistant.model.temperature")]}
+                      onValueChange={(value) => setValue("assistant.model.temperature", value[0])}
+                      disabled={isCallActive}
+                    />
+                    <span className="text-sm font-medium text-gray-700">{watch("assistant.model.temperature").toFixed(1)}</span>
+                  </div>
+                  {errors.assistant?.model?.temperature && <p className="text-red-500 text-sm">{errors.assistant.model.temperature.message}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="endCallMessage" className="block text-sm font-medium text-gray-700 mb-1">
+                    End Call Message
+                  </label>
+                  <Input
+                    {...register("assistant.endCallMessage")}
+                    id="endCallMessage"
+                    placeholder="Enter end call message"
                     disabled={isCallActive}
                   />
-                  <span className="text-sm font-medium text-gray-700">{defaultCall.assistant.model.temperature.toFixed(1)}</span>
+                  {errors.assistant?.endCallMessage && <p className="text-red-500 text-sm">{errors.assistant.endCallMessage.message}</p>}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="phone-settings" className="mt-4">
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Name Contact
+                </label>
+                <Input
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  id="contactName"
+                  placeholder="Enter contact name"
+                  disabled={isCallActive}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="twilioAccountSid" className="block text-sm font-medium text-gray-700 mb-1">
+                    Twilio Account SID
+                  </label>
+                  <Input
+                    {...register("phoneNumber.twilioAccountSid")}
+                    id="twilioAccountSid"
+                    placeholder="Enter Twilio Account SID"
+                    disabled={isCallActive}
+                  />
+                  {errors.phoneNumber?.twilioAccountSid && <p className="text-red-500 text-sm">{errors.phoneNumber.twilioAccountSid.message}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="twilioAuthToken" className="block text-sm font-medium text-gray-700 mb-1">
+                    Twilio Auth Token
+                  </label>
+                  <Input
+                    {...register("phoneNumber.twilioAuthToken")}
+                    id="twilioAuthToken"
+                    type="password"
+                    placeholder="Enter Twilio Auth Token"
+                    disabled={isCallActive}
+                  />
+                  {errors.phoneNumber?.twilioAuthToken && <p className="text-red-500 text-sm">{errors.phoneNumber.twilioAuthToken.message}</p>}
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="endCallMessage" className="block text-sm font-medium text-gray-700 mb-1">
-                  End Call Message
-                </label>
-                <Input
-                  value={defaultCall.assistant.endCallMessage}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, assistant: { ...defaultCall.assistant, endCallMessage: e.target.value } })}
-                  id="endCallMessage"
-                  placeholder="Enter end call message"
-                  disabled={isCallActive}
-                />
-              </div>
-            </div>
-          </div>
-        </TabsContent>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer Number
+                  </label>
+                  <Input
+                    {...register("customer.number")}
+                    id="customerNumber"
+                    placeholder="Enter customer number"
+                    disabled={isCallActive}
+                  />
+                  {errors.customer?.number && <p className="text-red-500 text-sm">{errors.customer.number.message}</p>}
+                </div>
 
-        <TabsContent value="phone-settings" className="mt-4">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 mb-1">
-                Name Contact
-              </label>
-              <Input
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                id="contactName"
-                placeholder="Enter contact name"
-                disabled={isCallActive}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="twilioAccountSid" className="block text-sm font-medium text-gray-700 mb-1">
-                  Twilio Account SID
-                </label>
-                <Input
-                  value={defaultCall.phoneNumber.twilioAccountSid}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, phoneNumber: { ...defaultCall.phoneNumber, twilioAccountSid: e.target.value } })}
-                  id="twilioAccountSid"
-                  placeholder="Enter Twilio Account SID"
-                  disabled={isCallActive}
-                />
+                <div>
+                  <label htmlFor="twilioPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    Twilio Phone Number
+                  </label>
+                  <Input
+                    {...register("phoneNumber.twilioPhoneNumber")}
+                    id="twilioPhoneNumber"
+                    placeholder="Enter Twilio phone number"
+                    disabled={isCallActive}
+                  />
+                  {errors.phoneNumber?.twilioPhoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber.twilioPhoneNumber.message}</p>}
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="twilioAuthToken" className="block text-sm font-medium text-gray-700 mb-1">
-                  Twilio Auth Token
-                </label>
-                <Input
-                  value={defaultCall.phoneNumber.twilioAuthToken}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, phoneNumber: { ...defaultCall.phoneNumber, twilioAuthToken: e.target.value } })}
-                  id="twilioAuthToken"
-                  type="password"
-                  placeholder="Enter Twilio Auth Token"
-                  disabled={isCallActive}
-                />
-              </div>
+
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                  Customer Number
-                </label>
-                <Input
-                  value={defaultCall.customer.number}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, customer: { ...defaultCall.customer, number: e.target.value } })}
-                  id="customerNumber"
-                  placeholder="Enter customer number"
-                  disabled={isCallActive}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="twilioPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                  Twilio Phone Number
-                </label>
-                <Input
-                  value={defaultCall.phoneNumber.twilioPhoneNumber}
-                  onChange={(e) => setDefaultCall({ ...defaultCall, phoneNumber: { ...defaultCall.phoneNumber, twilioPhoneNumber: e.target.value } })}
-                  id="twilioPhoneNumber"
-                  placeholder="Enter Twilio phone number"
-                  disabled={isCallActive}
-                />
-              </div>
-            </div>
-
-
-          </div>
-        </TabsContent>
-        <TabsContent value="history-call" className="mt-4">
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Call History</h3>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number ID</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer Phone Number</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Twilio Number</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {callHistory.map((call, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.username}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.phoneNumberId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.phoneNumber}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(call.timestamp).toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{call.twilioPhoneNumber}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+          <TabsContent value="history-call" className="mt-4">
+            <CallHistory refreshTrigger={refreshHistory} />
+          </TabsContent>
+        </Tabs>
+      </form>
     </div>
   );
 }

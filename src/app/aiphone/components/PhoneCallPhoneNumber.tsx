@@ -165,6 +165,17 @@ export default function PhoneCall() {
       return;
     }
 
+    console.log(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER)
+    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
+      toast({
+        title: "Error",
+        description: "Twilio Credential is not set",
+        duration: 3000,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsCallActive(true);
       const response = await fetch('/api/chat-ratelimit', {

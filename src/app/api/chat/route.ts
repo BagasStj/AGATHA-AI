@@ -18,7 +18,7 @@ const redis = new Redis({
 
 const chatRatelimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.slidingWindow(100, "1 d"),
+  limiter: Ratelimit.slidingWindow(200, "1 d"),
 });
 
 export async function POST(req: Request) {
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return new Response("User ID and username are required for rate limiting", { status: 400 });
     }
 
-    const { success, limit, reset, remaining } = await chatRatelimit.limit(userId);
+    const { success, limit, reset, remaining } = await chatRatelimit.limit(`chat-limit-${userId}-${username}`);
     if (!success) {
       return new Response(JSON.stringify({
         message: "You have reached your chat request limit for the day.",
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
     const { stream, handlers } = LangChainStream()
 
     // Simpan hanya beberapa pesan terakhir ke memori
-    const recentMessages = messages.slice(-50);
+    const recentMessages = messages.slice(-100);
     for (const message of recentMessages) {
       await memory.saveContext(
         { input: message.role === 'user' ? message.content : "AI" },

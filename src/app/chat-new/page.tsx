@@ -660,9 +660,9 @@ export default function ChatNewPage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div
-                          className="mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
+                          className="mb-2 w-[14vw] cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
                         >
-                          <div onClick={() => loadChat(chat.id)}>
+                          <div className='w-[7vw]' onClick={() => loadChat(chat.id)}>
                             <h3 className="font-semibold truncate">{chat.titleChat}</h3>
                             <p className="text-xs text-gray-500">{new Date(chat.createdAt).toLocaleString()}</p>
                           </div>

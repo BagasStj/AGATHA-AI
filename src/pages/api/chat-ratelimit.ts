@@ -9,7 +9,7 @@ const redis = new Redis({
 
 const flowRatelimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.slidingWindow(50, "1 d"),
+  limiter: Ratelimit.slidingWindow(1, "1 d"),
 });
 
 const chatRatelimit = new Ratelimit({
@@ -41,7 +41,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Invalid rate limit type' });
     }
 
-    const { success } = await ratelimit.limit(userId);
+    const { success } = await ratelimit.limit(`${type}-limit-${userId}`);
     
     res.status(200).json({ success });
   } else {

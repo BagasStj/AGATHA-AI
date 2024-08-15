@@ -17,6 +17,12 @@ import CallHistory from './CallHistory';
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
 const VAPI_PRIVATE_KEY = process.env.NEXT_PUBLIC_VAPI_PRIVATE_KEY;
+
+const TWILIO_ACCOUNT_SID = process.env.NEXT_PUBLIC_TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.NEXT_PUBLIC_TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER;
+
+
 const field_vapi = {
   "assistant": {
     "transcriber": {
@@ -93,11 +99,6 @@ const PhoneCallSchema = z.object({
     language: z.string(),
     endCallMessage: z.string(),
   }),
-  phoneNumber: z.object({
-    twilioPhoneNumber: z.string().min(1, "Twilio phone number is required"),
-    twilioAccountSid: z.string().min(1, "Twilio Account SID is required"),
-    twilioAuthToken: z.string().min(1, "Twilio Auth Token is required"),
-  }),
   customer: z.object({
     number: z.string().min(1, "Customer number is required"),
   }),
@@ -139,11 +140,6 @@ export default function PhoneCall() {
         language: "en",
         endCallMessage: field_vapi.assistant.endCallMessage,
       },
-      phoneNumber: {
-        twilioPhoneNumber: "",
-        twilioAccountSid: "",
-        twilioAuthToken: "",
-      },
       customer: {
         number: "",
       },
@@ -170,13 +166,14 @@ export default function PhoneCall() {
     }
 
     try {
+      setIsCallActive(true);
       const response = await fetch('/api/chat-ratelimit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id ,  type:'aiphone' }),
+        body: JSON.stringify({ userId: user.id, type: 'aiphone' }),
       });
       const { success } = await response.json();
-      
+
       if (!success) {
         toast({
           title: "Rate Limit Exceeded",
@@ -187,8 +184,90 @@ export default function PhoneCall() {
         return;
       }
 
-      setIsCallActive(true);
-      // ... rest of the existing startCall logic
+      const phoneNumberResponse = await fetch('https://api.vapi.ai/phone-number/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${VAPI_PRIVATE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          number: '+12564726229',
+          name: contact,
+          twilioAccountSid: TWILIO_ACCOUNT_SID,
+          twilioAuthToken: TWILIO_AUTH_TOKEN,
+          provider: "twilio"
+        })
+      });
+
+      if (!phoneNumberResponse.ok) {
+        throw new Error(`HTTP error! status: ${phoneNumberResponse.status}`);
+      }
+
+      const phoneNumberData = await phoneNumberResponse.json();
+      console.log('Phone Number API response:', phoneNumberData);
+
+      // Only proceed with /call/phone if phone-number/ was successful
+      const callResponse = await fetch('https://api.vapi.ai/call/phone', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${VAPI_PRIVATE_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...data,
+          customer: {
+            number: '+62' + data.customer.number // Add +62 prefix here
+          },
+          phoneNumber: {
+            twilioPhoneNumber: TWILIO_PHONE_NUMBER,
+            twilioAccountSid: TWILIO_ACCOUNT_SID,
+            twilioAuthToken: TWILIO_AUTH_TOKEN,
+          },
+
+          phoneNumberId: phoneNumberData.id
+        })
+      });
+
+      if (!callResponse.ok) {
+        throw new Error(`HTTP error! status: ${callResponse.status}`);
+      }
+
+      const callData = await callResponse.json();
+      console.log('Call API response:', callData);
+
+      // Save call history
+
+      const historyResponse = await fetch('/api/call-history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          username: user?.username,
+          phoneNumber: '+62' + data.customer.number,
+          phoneNumberId: callData.id,
+          contact: contact,
+          twilioPhoneNumber: TWILIO_PHONE_NUMBER,
+          timestamp: new Date().toISOString()
+        })
+      });
+
+      if (!historyResponse.ok) {
+        console.error('Failed to save call history:', await historyResponse.text());
+      }
+
+      setRefreshHistory(prev => prev + 1);
+
+      toast({
+        title: "Success",
+        description: `Call Success , Wait Until Call Connected In Your Phone`,
+        duration: 3000,
+        variant: "default",
+        color: "green"
+      });
+      setIsCallActive(false);
+
     } catch (error) {
       console.error('Error starting call:', error);
       toast({
@@ -239,15 +318,15 @@ export default function PhoneCall() {
             </TabsList>
             <Button
               type="submit"
-              className={`${isCallActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white w-[20vw]`}
+              className={`${isCallActive ? 'bg-green-300 hover:bg-green-300' : 'bg-green-500 hover:bg-green-600'} text-white w-[20vw]`}
             >
               {isCallActive ? (
                 <>
-                  <PhoneOffIcon className="mr-2 h-4 w-4" /> End Call
+                  <PhoneOffIcon className="mr-2 h-4 w-4" />  Starting to Calling
                 </>
               ) : (
                 <>
-                  <PhoneIcon className="mr-2 h-4 w-4" /> Start Call
+                  <PhoneIcon className="mr-2 h-4 w-4" /> Call
                 </>
               )}
             </Button>
@@ -386,7 +465,7 @@ export default function PhoneCall() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="twilioAccountSid" className="block text-sm font-medium text-gray-700 mb-1">
                     Twilio Account SID
@@ -413,23 +492,29 @@ export default function PhoneCall() {
                   />
                   {errors.phoneNumber?.twilioAuthToken && <p className="text-red-500 text-sm">{errors.phoneNumber.twilioAuthToken.message}</p>}
                 </div>
-              </div>
+              </div> */}
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                    Customer Number
-                  </label>
+              {/* <div className="grid grid-cols-2 gap-4"> */}
+              <div>
+                <label htmlFor="customerNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  Customer Number
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center px-3 text-sm text-gray-900 bg-gray-200 border border-r-0 border-gray-300 rounded-l-md">
+                    +62
+                  </span>
                   <Input
                     {...register("customer.number")}
                     id="customerNumber"
                     placeholder="Enter customer number"
                     disabled={isCallActive}
+                    className="rounded-l-none"
                   />
-                  {errors.customer?.number && <p className="text-red-500 text-sm">{errors.customer.number.message}</p>}
                 </div>
+                {errors.customer?.number && <p className="text-red-500 text-sm">{errors.customer.number.message}</p>}
+              </div>
 
-                <div>
+              {/* <div>
                   <label htmlFor="twilioPhoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
                     Twilio Phone Number
                   </label>
@@ -441,7 +526,7 @@ export default function PhoneCall() {
                   />
                   {errors.phoneNumber?.twilioPhoneNumber && <p className="text-red-500 text-sm">{errors.phoneNumber.twilioPhoneNumber.message}</p>}
                 </div>
-              </div>
+              </div> */}
 
 
             </div>

@@ -367,7 +367,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       // This is regular text with potential formatting
       const lines = part.split('\n');
       return (
-        <div key={index} className="mb-2 text-gray-800">
+        <div key={index} className="mb-2 ">
           {lines.map((line, lineIndex) => {
             const match = line.match(numberedListRegex);
             if (match) {

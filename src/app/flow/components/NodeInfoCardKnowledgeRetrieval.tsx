@@ -128,7 +128,6 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     fileName: fileName,
                     description: description,
                 });
-                setIsLoading(false);
 
             };
             reader.readAsDataURL(file);
@@ -142,7 +141,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 variant: "destructive",
             });
         } finally {
-            setIsLoading(false);
+            
         }
     };
     const handleFileUpload = (uploadedFile: File) => {

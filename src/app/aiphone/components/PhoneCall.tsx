@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 import { PhoneIcon, MicIcon, PhoneOffIcon, Settings, Phone } from 'lucide-react';
 import VapiClient from '@vapi-ai/web';
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 import { useUser } from '@clerk/nextjs';
 
 const VAPI_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
@@ -73,40 +72,44 @@ export default function PhoneCall() {
 
 
   const startCall = useCallback(async () => {
-    
-    // if (!user?.id) {
-    //   toast({
-    //     title: "Error",
-    //     description: "User is not authenticated.",
-    //     duration: 3000,
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
-
-    // const { success, remaining } = await checkRateLimit(user.id, 'aiphone');
-    // if (!success) {
-    //   toast({
-    //     title: "Rate Limit Exceeded",
-    //     description: `You have reached your daily call limit. Please try again later.`,
-    //     duration: 3000,
-    //     variant: "destructive",
-    //   });
-    //   await logRateLimitedRequest(user.id, user.username || '', 'aiphone');
-    //   return;
-    // }
-    
-    if (!vapiClient) {
+    if (!user?.id) {
       toast({
         title: "Error",
-        description: "Vapi client is not initialized.",
+        description: "User is not authenticated.",
         duration: 3000,
         variant: "destructive",
       });
       return;
     }
-  
+
     try {
+      const response = await fetch('/api/chat-ratelimit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id  , type:'aiphone'}),
+      });
+      const { success } = await response.json();
+      
+      if (!success) {
+        toast({
+          title: "Rate Limit Exceeded",
+          description: "You have reached your daily call limit. Please try again later.",
+          duration: 3000,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!vapiClient) {
+        toast({
+          title: "Error",
+          description: "Vapi client is not initialized.",
+          duration: 3000,
+          variant: "destructive",
+        });
+        return;
+      }
+  
       setIsCallActive(true);
       setCallStatus('Calling...');
       console.log('GET PARAMS', defaultCall);
@@ -173,7 +176,7 @@ export default function PhoneCall() {
       });
       setIsCallActive(false);
     }
-  }, [toast, vapiClient, defaultCall, phoneNumber, knowledgeBase]);
+  }, [toast, vapiClient, defaultCall, phoneNumber, knowledgeBase, user]);
 
   const endCall = useCallback(() => {
     if (vapiClient) {

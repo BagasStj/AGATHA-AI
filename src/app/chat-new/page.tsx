@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Toaster } from '@/components/ui/toaster';
 import { isSameDay } from 'date-fns';
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
+// import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 
 
 const DEFAULT_PROMPT: any = {
@@ -180,8 +180,18 @@ export default function ChatNewPage() {
   const handleApiError = async (error: Error) => {
     await fetchRateLimitedUser();
     console.log('Error from chat API:', rateLimitedUser);
-    
-    if (JSON.parse(error.message).message === 'You have reached your request limit for the day.') {
+
+    let errorMessage;
+    try {
+      errorMessage = JSON.parse(error.message).message;
+    } catch (parseError) {
+      console.error('Error parsing error message:', parseError);
+      errorMessage = error.message;
+    }
+
+
+    if (errorMessage === 'You have reached your request limit for the day.') {
+
       const today = new Date();
       const existingRateLimit = rateLimitedUser.find((entry: any) => 
         isSameDay(new Date(entry.timestamp), today)

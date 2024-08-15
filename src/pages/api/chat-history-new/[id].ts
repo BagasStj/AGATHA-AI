@@ -23,19 +23,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   } else if (req.method === 'GET') {
     try {
-      const { id ,userId} = req.query;
+      const { id, userId } = req.query;
       const updatedChat = await prisma.chatHistoryNEW.findMany({
         where: {
-           id: id as string ,
-           userId: userId as string
-
+          id: id as string,
+          userId: userId as string
         },
+        orderBy: {
+          createdAt: 'desc'
+        }
       });
 
       res.status(200).json(updatedChat);
     } catch (error) {
-      console.error('Error updating chat history:', error);
-      res.status(500).json({ error: 'Error updating chat history' });
+      console.error('Error fetching chat history:', error);
+      res.status(500).json({ error: 'Error fetching chat history' });
     }
   } else if (req.method === 'DELETE') {
     try {

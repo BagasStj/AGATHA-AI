@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Save, ScrollText, Upload } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from "@/components/ui/use-toast";
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -84,20 +83,24 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             return;
         }
 
-        // const { success, limit, reset, remaining } = await checkRateLimit(user.id, 'flow');
-
-        // if (!success) {
-        //     await logRateLimitedRequest(user.id, user.username || '', 'flow');
-        //     toast({
-        //         title: "Rate Limit Exceeded",
-        //         description: "You have reached your request limit for the day.",
-        //         duration: 5000,
-        //         variant: "destructive",
-        //     });
-        //     return;
-        // }
-
         try {
+            const response = await fetch('/api/chat-ratelimit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user.id ,type:'flow' }),
+            });
+            const { success } = await response.json();
+
+            if (!success) {
+                toast({
+                    title: "Rate Limit Exceeded",
+                    description: "You have reached your request limit for the day.",
+                    duration: 5000,
+                    variant: "destructive",
+                });
+                return;
+            }
+
             setIsLoading(true);
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -131,9 +134,14 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
 
         } catch (error) {
             console.error('Error in handleSave:', error);
-            // You can add a toast notification here to inform the user about the error
+            toast({
+                title: "Error",
+                description: "An error occurred while saving.",
+                duration: 5000,
+                variant: "destructive",
+            });
         } finally {
-
+            setIsLoading(false);
         }
     };
     const handleFileUpload = (uploadedFile: File) => {

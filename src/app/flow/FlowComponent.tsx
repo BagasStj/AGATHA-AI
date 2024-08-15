@@ -24,7 +24,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { User } from '@clerk/nextjs/server';
 import { useHotkeys } from 'react-hotkeys-hook';
 import DocumentViewPopup from './components/DocumentViewPopup';
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
+import { checkRateLimit, logRateLimitedRequest } from '@/app/api/limit-rate/rateLimit';
+import { useUser } from '@clerk/nextjs';
 
 interface NodeData {
   label: string;
@@ -42,8 +43,6 @@ const edgeTypes: EdgeTypes = {
 
 
 const VAPI_API_KEY = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
-const KV_REST_API_URL = process.env.KV_REST_API_URL;
-const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 const initialNodes: Node[] = [];
 
@@ -61,7 +60,7 @@ export default function FlowComponentWrapper({ selectedFlowId, onFlowSaved, onFl
   );
 }
 
-function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
+function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selectedFlowId: string | null, onFlowSaved: (flow: any) => void, onFlowDeleted: () => void, user: any | null; }) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -95,6 +94,8 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
   const [showVapiPopup, setShowVapiPopup] = useState(false);
   const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
   const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
+
+  const { user } = useUser();
 
   const onViewDocument = useCallback(() => {
     setIsDocumentViewOpen(true);
@@ -451,18 +452,33 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted, user }: { s
         return;
       }
 
-      // const { success, limit, reset, remaining } = await checkRateLimit(user.id, 'flow');
+      if (!user) {
+        toast({
+          title: "Error",
+          description: "User is not authenticated.",
+          duration: 3000,
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // if (!success) {
-      //   await logRateLimitedRequest(user.id, user.username || '', 'flow');
-      //   toast({
-      //     title: "Rate Limit Exceeded",
-      //     description: "You have reached your request limit for Flow. Please try again later.",
-      //     duration: 5000,
-      //     variant: "destructive",
-      //   });
-      //   return;
-      // }
+      const response = await fetch('/api/chat-ratelimit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id , type :'flow'}),
+      });
+      const { success } = await response.json();
+      
+      if (!success) {
+        toast({
+          title: "Rate limit exceeded",
+          description: "You have reached your chat limit for today.",
+          variant: "destructive",
+        });
+        return;
+      }
 
 
       try {

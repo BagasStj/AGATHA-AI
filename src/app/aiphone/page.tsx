@@ -1,34 +1,11 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { PhoneTabs } from "./components/PhoneTabs";
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from "@/components/ui/use-toast";
 const KV_REST_API_URL = process.env.KV_REST_API_URL;
 const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 
 export default function AIPhonePage() {
-  const { user } = useUser();
-  const { toast } = useToast();
-
-  // Add this function to handle rate limiting
-  const handleRateLimit = async () => {
-    if (!user) return false;
-
-    const { success, limit, reset, remaining } = await checkRateLimit(user.id, 'aiphone');
-
-    if (!success) {
-      await logRateLimitedRequest(user.id, user.username || '', 'aiphone');
-      toast({
-        title: "Rate Limit Exceeded",
-        description: "You have reached your request limit for AI Phone. Please try again later.",
-        duration: 5000,
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
-  };
 
   return (
     <div className="p-1 flex items-center justify-center">

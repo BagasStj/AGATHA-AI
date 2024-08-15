@@ -16,7 +16,6 @@ import {
   DialogContentChat,
 } from "@/components/ui/dialog";
 import { useUser } from '@clerk/nextjs';
-import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
 import { useToast } from '@/components/ui/use-toast';
 
 interface ChatDialogProps {
@@ -61,8 +60,6 @@ const MessageInput = ({ onSend }: { onSend: (message: string) => void }) => {
     </form>
   );
 };
-
-
 
 const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, edges, isNodeInfoCardOpen }) => {
   const [messages, setMessages] = useState<{ role: 'user' | 'ai', content: string }[]>([
@@ -222,88 +219,103 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   const handleSend = useCallback(async (input: string) => {
     if (!user) return;
 
-    // const { success, limit, reset, remaining } = await checkRateLimit(user.id , 'flow');
+    try {
+      const response = await fetch('/api/chat-ratelimit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id , type :'flow'}),
+      });
+      const { success } = await response.json();
+      
+      if (!success) {
+        toast({
+          title: "Rate limit exceeded",
+          description: "You have reached your chat limit for today.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // if (!success) {
-    //   await logRateLimitedRequest(user.id, user?.username || '', 'flow');
-    //   toast({
-    //     title: "Rate Limit Exceeded",
-    //     description: "You have reached your request limit for the day.",
-    //     duration: 5000,
-    //     variant: "destructive",
-    //   });
-    //   return;
-    // }
+      setIsLoading(true);
+      const userMessage = { role: 'user' as const, content: input };
+      setMessages(prevMessages => [...prevMessages, userMessage]);
 
-    setIsLoading(true);
-    const userMessage = { role: 'user' as const, content: input };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
+      const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM With Custom Prompt');
 
-    const llmChatNodes = nodes.filter(node => node.data.nodeType === 'LLM With Custom Prompt');
+      if (llmChatNodes.length === 2) {
+        // Chain two LLM With Custom Prompt nodes
+        let firstPrompt: any = llmChatNodes[0].data.prompt || '';
+        let secondPrompt: any = llmChatNodes[1].data.prompt || '';
 
-    if (llmChatNodes.length === 2) {
-      // Chain two LLM With Custom Prompt nodes
-      let firstPrompt: any = llmChatNodes[0].data.prompt || '';
-      let secondPrompt: any = llmChatNodes[1].data.prompt || '';
+        console.log('First Prompt:', firstPrompt);
+        console.log('Second Prompt:', secondPrompt);
 
-      console.log('First Prompt:', firstPrompt);
-      console.log('Second Prompt:', secondPrompt);
+        const firstResponse = await fetchChatResponseChat(input, firstPrompt);
+        if (firstResponse) {
+          console.log('First LLM Response:', firstResponse);
+          const secondResponse = await fetchChatResponseChat(firstResponse.text, secondPrompt);
+          if (secondResponse) {
+            console.log('Second LLM Response:', secondResponse);
+            const assistantMessage = {
+              role: 'ai' as const,
+              content: secondResponse.text,
+            };
+            setMessages(prevMessages => [...prevMessages, assistantMessage]);
+          }
+        }
+        // console.log('MESSAGES', messages);
 
-      const firstResponse = await fetchChatResponseChat(input, firstPrompt);
-      if (firstResponse) {
-        console.log('First LLM Response:', firstResponse);
-        const secondResponse = await fetchChatResponseChat(firstResponse.text, secondPrompt);
-        if (secondResponse) {
-          console.log('Second LLM Response:', secondResponse);
+      } else if (llmChatNodes.length === 1) {
+        // Single LLM With Custom Prompt node
+        const chatNode = llmChatNodes[0];
+        const prompt: any = chatNode.data.prompt || '';
+        console.log('Prompt:', prompt);
+        const response = await fetchChatResponseChat(input, prompt);
+        if (response) {
+          console.log('LLM Response:', response);
           const assistantMessage = {
             role: 'ai' as const,
-            content: secondResponse.text,
+            content: response.text,
           };
           setMessages(prevMessages => [...prevMessages, assistantMessage]);
         }
-      }
-      // console.log('MESSAGES', messages);
+        console.log('MESSAGES', messages);
 
-    } else if (llmChatNodes.length === 1) {
-      // Single LLM With Custom Prompt node
-      const chatNode = llmChatNodes[0];
-      const prompt: any = chatNode.data.prompt || '';
-      console.log('Prompt:', prompt);
-      const response = await fetchChatResponseChat(input, prompt);
-      if (response) {
-        console.log('LLM Response:', response);
-        const assistantMessage = {
-          role: 'ai' as const,
-          content: response.text,
-        };
-        setMessages(prevMessages => [...prevMessages, assistantMessage]);
+      } else if (nodes.find(node => node.data.nodeType === 'LLM By Knowledge')) {
+        const response = await fetchChatResponsePdf(input);
+        if (response) {
+          const assistantMessage = {
+            role: 'ai' as const,
+            content: response.text,
+          };
+          setMessages(prevMessages => [...prevMessages, assistantMessage]);
+        }
+      } else if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
+        const response = await fetchChatResponse(input);
+        if (response) {
+          const assistantMessage = {
+            role: 'ai' as const,
+            content: response.content,
+          };
+          setMessages(prevMessages => [...prevMessages, assistantMessage]);
+        }
+      } else {
+        // Handle other node types or default behavior
+        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
       }
-      console.log('MESSAGES', messages);
-
-    } else if (nodes.find(node => node.data.nodeType === 'LLM By Knowledge')) {
-      const response = await fetchChatResponsePdf(input);
-      if (response) {
-        const assistantMessage = {
-          role: 'ai' as const,
-          content: response.text,
-        };
-        setMessages(prevMessages => [...prevMessages, assistantMessage]);
-      }
-    } else if (nodes.find(node => node.data.nodeType === 'LLM Antonim')) {
-      const response = await fetchChatResponse(input);
-      if (response) {
-        const assistantMessage = {
-          role: 'ai' as const,
-          content: response.content,
-        };
-        setMessages(prevMessages => [...prevMessages, assistantMessage]);
-      }
-    } else {
-      // Handle other node types or default behavior
-      setMessages(prevMessages => [...prevMessages, { role: 'ai', content: "This node type doesn't support chat functionality." }]);
+    } catch (error) {
+      console.error('Error in handleSend:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while sending your message.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
-  }, [nodes, edges, selectedNode]);
+  }, [nodes, edges, selectedNode, user, toast]);
 
   const toggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);

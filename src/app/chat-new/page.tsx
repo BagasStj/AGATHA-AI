@@ -30,8 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Toaster } from '@/components/ui/toaster';
 import { isSameDay } from 'date-fns';
-// import { checkRateLimit, logRateLimitedRequest } from '@/lib/rateLimit';
-
+import { Loader2 } from "lucide-react";
 
 const DEFAULT_PROMPT: any = {
   id: 'default',
@@ -41,7 +40,7 @@ const DEFAULT_PROMPT: any = {
   topP: 1,
   presencePenalty: 0,
   frequencyPenalty: 0,
-  maxTokens: 150,
+  maxTokens: 512,
 };
 
 export default function ChatNewPage() {
@@ -81,6 +80,7 @@ export default function ChatNewPage() {
   const [isPopperOpen, setIsPopperOpen] = useState(false);
   const [popperPosition, setPopperPosition] = useState({ top: 0, left: 0 });
   const [rateLimitedUser, setRateLimitedUser] = useState<any>([]);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
 
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
     placement: 'top',
@@ -94,8 +94,7 @@ export default function ChatNewPage() {
     ],
   });
 
-
-
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -248,26 +247,15 @@ export default function ChatNewPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // try {
-    //   const { success, limit, reset, remaining } = await checkRateLimit(user?.id || '', 'chat');
-
-    //   if (!success) {
-    //     await logRateLimitedRequest(user?.id || '', user?.username || '', 'chat');
-    //     toast({
-    //       title: "Rate Limit Exceeded",
-    //       description: "You have reached your request limit for chat. Please try again later.",
-    //       duration: 5000,
-    //       variant: "destructive",
-    //     });
-    //     return;
-    //   }
-
-    //   await originalHandleSubmit(e);
-    // } catch (error: any) {
-    //   console.error('Error submitting chat:', error);
-    //   handleApiError(error);
-    // }
+    setIsTyping(true);
+    try {
       await originalHandleSubmit(e);
+    } catch (error: any) {
+      console.error('Error submitting chat:', error);
+      handleApiError(error);
+    } finally {
+      setIsTyping(false);
+    }
     setSelectedText('');
     setIsPopperOpen(false);
   };
@@ -422,7 +410,7 @@ export default function ChatNewPage() {
       topP: prompt.topP || 1,
       presencePenalty: prompt.presencePenalty || 0,
       frequencyPenalty: prompt.frequencyPenalty || 0,
-      maxTokens: prompt.maxTokens || 150,
+      maxTokens: prompt.maxTokens || 512,
       titlePrompt: prompt.title,
     });
     handleCloseAvailablePrompts();
@@ -552,24 +540,37 @@ export default function ChatNewPage() {
 
 
   const loadChat = async (id: string) => {
-    const response = await fetch(`/api/chat-history-new/${id}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (!response.ok) throw new Error('Failed to update chat');
-    const updatedChatFromServer = await response.json();
-    setMessages(updatedChatFromServer[0].messages);
-    setParams({
-      model: updatedChatFromServer[0].model,
-      temperature: updatedChatFromServer[0].temperature,
-      topP: updatedChatFromServer[0].topP,
-      presencePenalty: updatedChatFromServer[0].presencePenalty,
-      frequencyPenalty: updatedChatFromServer[0].frequencyPenalty,
-      maxTokens: updatedChatFromServer[0].maxTokens,
-      titlePrompt: updatedChatFromServer[0].titlePrompt,
-      prompt: updatedChatFromServer[0].prompt,
-    });
-    setCurrentChatId(id);
+    setIsLoadingChat(true);
+    try {
+      const response = await fetch(`/api/chat-history-new/${id}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to update chat');
+      const updatedChatFromServer = await response.json();
+      setMessages(updatedChatFromServer[0].messages);
+      setParams({
+        model: updatedChatFromServer[0].model,
+        temperature: updatedChatFromServer[0].temperature,
+        topP: updatedChatFromServer[0].topP,
+        presencePenalty: updatedChatFromServer[0].presencePenalty,
+        frequencyPenalty: updatedChatFromServer[0].frequencyPenalty,
+        maxTokens: updatedChatFromServer[0].maxTokens,
+        titlePrompt: updatedChatFromServer[0].titlePrompt,
+        prompt: updatedChatFromServer[0].prompt,
+      });
+      setCurrentChatId(id);
+    } catch (error) {
+      console.error('Error loading chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat",
+        duration: 3000,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingChat(false);
+    }
   }
   const openDeleteChatConfirmation = (id: string, title: string) => {
     setDeleteChatId(id);
@@ -696,41 +697,72 @@ export default function ChatNewPage() {
         {/* Main content */}
         <Card className="flex-1 flex flex-col">
           <CardHeader className="border-b p-3 pl-6">
-            <CardTitle className='text-lg font-semibold'>{params.titlePrompt}</CardTitle>
-            <CardDescription className='text-xs text-gray-600'>
-              {params.prompt.length > 50
-                ? params.prompt.slice(0, 50) + '...'
-                : params.prompt}
-            </CardDescription>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <CardTitle className='text-lg font-semibold'>{params.titlePrompt}</CardTitle>
+                  <CardDescription className='text-xs text-gray-600'>
+                    {params.prompt.length > 50
+                      ? params.prompt.slice(0, 50) + '...'
+                      : params.prompt}
+                  </CardDescription>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="w-[55vw]">
+                <p><strong>{params.titlePrompt}</strong></p>
+                <p>{params.prompt}</p>
+              </TooltipContent>
+            </Tooltip>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between p-4">
-            <ScrollArea className="flex-grow h-full">
-              <div className="max-w-2xl mx-auto py-4 px-4 h-[1vh]">
-                {messages.length === 0 ? (
-                  <div className="text-center py-10">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Chat AI</h2>
-                    <p className="text-gray-600">Start a conversation with the AI assistant</p>
+            {isLoadingChat ? (
+              <div className="flex-grow flex flex-col space-y-4 p-4">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="flex items-start space-x-4">
+                    <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                    </div>
                   </div>
-                ) : (
-                  messages.map((m, index) => (
-                    <div key={index} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
-                      <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === 'user' ? 'bg-gray-200 ml-4' : 'bg-black text-white mr-4'
-                          }`}>
-                          {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : <BotMessageSquare className="w-5 h-5 text-white" />}
-                        </div>
-                        <div className="flex-grow overflow-hidden">
-                          <div className="text-gray-800 break-words" onMouseUp={handleTextSelection} >{formatMessage(m.content)}</div>
+                ))}
+              </div>
+            ) : (
+              <ScrollArea className="flex-grow h-full">
+                <div className="max-w-2xl mx-auto py-4 px-4 h-[1vh]">
+                  {messages.length === 0 ? (
+                    <div className="text-center py-10">
+                      <h2 className="text-2xl font-bold text-gray-800 mb-2">Chat AI</h2>
+                      <p className="text-gray-600">Start a conversation with the AI assistant</p>
+                    </div>
+                  ) : (
+                    messages.map((m, index) => (
+                      <div key={index} className={`mb-6 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
+                        <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${m.role === 'user' ? 'bg-gray-200 ml-4' : 'bg-black text-white mr-4'
+                            }`}>
+                            {m.role === 'user' ? <UserIcon className="w-5 h-5 text-gray-600" /> : <BotMessageSquare className="w-5 h-5 text-white" />}
+                          </div>
+                          <div className="flex-grow overflow-hidden">
+                            <div className="text-gray-800 break-words" onMouseUp={handleTextSelection} >{formatMessage(m.content)}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                    ))
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+            )}
             {/* Message input */}
             <form onSubmit={handleSubmit} className="mt-4">
+            {isLoading && (
+                <div className="flex justify-center items-center space-x-2 mb-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm text-gray-500">AI is typing</span>
+                  <span className="text-sm text-gray-500 animate-pulse">...</span>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Input
                   placeholder="Send a message"
@@ -738,10 +770,11 @@ export default function ChatNewPage() {
                   value={input}
                   onChange={handleInputChange}
                 />
-                <Button type="submit" size="icon" disabled={isLoading}>
+                <Button type="submit" size="icon" disabled={isLoading || isTyping}>
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+             
             </form>
           </CardContent>
         </Card>

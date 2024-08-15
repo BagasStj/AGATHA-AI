@@ -9,7 +9,7 @@ const redis = new Redis({
 
 const flowRatelimit = new Ratelimit({
   redis: redis,
-  limiter: Ratelimit.slidingWindow(1, "1 d"),
+  limiter: Ratelimit.slidingWindow(50, "1 d"),
 });
 
 const chatRatelimit = new Ratelimit({

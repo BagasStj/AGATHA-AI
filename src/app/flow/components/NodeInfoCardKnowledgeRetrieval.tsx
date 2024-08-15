@@ -49,6 +49,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
 
 
     const fetchUpserrt = async () => { //upsertfile
+        setIsLoading(true);
         if (file && user) {
             formData.append("files", file);
             formData.append("legacyBuild", 'true')
@@ -78,6 +79,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     };
 
     const handleSave = async () => {
+        setIsLoading(true);
         if (!fileName || !file || !user) {
             alert('Please upload a file before saving.');
             return;
@@ -101,7 +103,6 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 return;
             }
 
-            setIsLoading(true);
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const base64File = e.target?.result as string;

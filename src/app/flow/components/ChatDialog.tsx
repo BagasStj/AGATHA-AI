@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { X, Send, Fullscreen, Minimize, UserIcon, Eraser, BotMessageSquare } from 'lucide-react';
+import { X, Send, Fullscreen, Minimize, UserIcon, Eraser, BotMessageSquare, CheckIcon, CopyIcon } from 'lucide-react';
 import { Node, Edge } from '@xyflow/react';
 import {
   Tooltip,
@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/components/ui/use-toast';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface ChatDialogProps {
   onClose: () => void;
@@ -225,10 +227,10 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id , type :'flow'}),
+        body: JSON.stringify({ userId: user.id, type: 'flow' }),
       });
       const { success } = await response.json();
-      
+
       if (!success) {
         toast({
           title: "Rate limit exceeded",
@@ -325,6 +327,142 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
     setMessages([]);
   }, []);
 
+  const formatMessage = (content: string | undefined) => {
+    if (!content) return null;
+
+    const codeBlockRegex = /```([\s\S]*?)```/g;
+    const boldRegex = /\*\*(.*?)\*\*/g;
+    const numberedListRegex = /^\d+\.\s/;
+    const colonRegex = /:\s*/;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    const parts = content.split(codeBlockRegex);
+
+    return parts.map((part, index) => {
+      if (index % 2 === 1) {
+        // This is a code block
+        const [language, ...codeLines] = part.trim().split('\n');
+        const code = codeLines.join('\n');
+        return (
+          <div key={index} className="relative my-4">
+            <div className="bg-gray-800 text-gray-200 rounded-t-md px-4 py-2 text-sm font-mono flex items-center justify-between">
+              <span>{language || 'Code'}</span>
+              <CopyButton text={code} language={language} />
+            </div>
+            <SyntaxHighlighter
+              language={language.toLowerCase() || 'text'}
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                borderTopLeftRadius: 0,
+                borderTopRightRadius: 0,
+              }}
+            >
+              {code}
+            </SyntaxHighlighter>
+          </div>
+        );
+      }
+
+      // This is regular text with potential formatting
+      const lines = part.split('\n');
+      return (
+        <div key={index} className="mb-2 text-gray-800">
+          {lines.map((line, lineIndex) => {
+            const match = line.match(numberedListRegex);
+            if (match) {
+              // This is a numbered list item
+              const [number, rest] = line.split(match[0]);
+              const [title, ...descriptionParts] = rest.split(':');
+              const description = descriptionParts.join(':').trim();
+
+              return (
+                <div key={lineIndex} className="mb-3">
+                  <div className="flex items-start">
+                    <span className="font-bold mr-2">{match[0]}</span>
+                    <span className="font-bold">{formatTextWithLinks(title.trim())}</span>
+                  </div>
+                  {description && (
+                    <div className="ml-8 mt-1">
+                      {formatTextWithLinks(description)}
+                    </div>
+                  )}
+                </div>
+              );
+            } else {
+              // This is a regular paragraph
+              return (
+                <p key={lineIndex}>
+                  {formatTextWithLinks(line)}
+                </p>
+              );
+            }
+          })}
+        </div>
+      );
+    });
+  };
+
+  const formatTextWithLinks = (text: string) => {
+    const parts = text.split(/(https?:\/\/[^\s]+)/g);
+    return parts.map((part, index) => {
+      if (part.match(/^https?:\/\//)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {part}
+          </a>
+        );
+      }
+      return part.split(/(\*\*.*?\*\*)/).map((segment, segmentIndex) => {
+        if (segment.startsWith('**') && segment.endsWith('**')) {
+          return <strong key={segmentIndex}>{segment.slice(2, -2)}</strong>;
+        }
+        return segment;
+      });
+    });
+  };
+
+  const CopyButton = ({ text, language }: { text: string, language: string }) => {
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = async () => {
+      try {
+        if (text == '') {
+          await navigator.clipboard.writeText(language);
+        } else {
+          await navigator.clipboard.writeText(text);
+        }
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+      } catch (err) {
+        console.error('Failed to copy text: ', err);
+      }
+    };
+
+    return (
+      <Button
+        onClick={handleCopy}
+        className="p-1 rounded-md bg-gray-700 hover:bg-gray-600 transition-colors"
+        aria-label="Copy code"
+      >
+        {isCopied ? (
+          <CheckIcon className="h-4 w-4 text-green-500" />
+        ) : (
+          <CopyIcon className="h-4 w-4 text-gray-300" />
+        )}
+      </Button>
+    );
+  }
+
+
+
+
   const ChatContent = () => (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b flex justify-between items-center bg-gray-50">
@@ -381,7 +519,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
                     <BotMessageSquare className="w-4 h-4 text-white" />
                   </div>
                 )}
-                <div className="break-words">{m.content}</div>
+                <div className={`break-words ${m.role === 'user' ? 'text-white' : ''}`}>{formatMessage(m.content)}</div>
               </div>
             </div>
           </div>

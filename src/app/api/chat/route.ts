@@ -1,6 +1,6 @@
 import { StreamingTextResponse, LangChainStream } from 'ai'
 import { ChatOpenAI } from '@langchain/openai'
-import { AIMessage, HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { AIMessage, BaseMessageFields, HumanMessage, SystemMessage } from '@langchain/core/messages'
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { Langfuse } from 'langfuse-node';
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     
     const memory = new ConversationTokenBufferMemory({
       llm: llm,
-      maxTokenLimit: 300,
+      maxTokenLimit: 2000, // Increase token limit to store more context
       returnMessages: true,
       memoryKey: "chat_history",
     });
@@ -98,14 +98,14 @@ export async function POST(req: Request) {
 
     const { stream, handlers } = LangChainStream()
 
-    // Simpan hanya beberapa pesan terakhir ke memori
-    const recentMessages = messages.slice(-100);
-    for (const message of recentMessages) {
-      await memory.saveContext(
-        { input: message.role === 'user' ? message.content : "AI" },
-        { output: message.role === 'user' ? "Human" : message.content }
-      );
-    }
+    // Instead, use this to properly format and save the message history
+    const formattedMessages = messages.map((message: { role: string; content: string | BaseMessageFields; }) => 
+      message.role === 'user' 
+        ? new HumanMessage(message.content)
+        : new AIMessage(message.content)
+    );
+
+    await memory.chatHistory.addMessages(formattedMessages);
 
     // Get the last user message
     const lastMessage = messages[messages.length - 1].content;

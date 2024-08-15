@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useUser } from '@clerk/nextjs';
 import { UserResource } from '@clerk/types';
-
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Flow {
   id: string;
@@ -45,12 +45,14 @@ export default function FlowPage() {
   const [flows, setFlows] = useState<Flow[]>([]);
   const [selectedFlow, setSelectedFlow] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
-  
+
 
   useEffect(() => {
     async function fetchFlows() {
       if (!user) return;
+      setIsLoading(true);
       try {
         const [flowsResponse, indexesResponse] = await Promise.all([
           fetch(`/api/flows?username=${user.username}`),
@@ -75,6 +77,7 @@ export default function FlowPage() {
       } catch (error) {
         console.error('Error fetching flows:', error);
       }
+      setIsLoading(false);
     }
 
     fetchFlows();
@@ -133,6 +136,7 @@ export default function FlowPage() {
   };
   const fetchFlows = useCallback(async () => {
     if (!user) return;
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/flows?username=${user.username}`);
       if (!response.ok) {
@@ -140,9 +144,14 @@ export default function FlowPage() {
       }
       const data = await response.json();
       setFlows(data);
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.error('Error fetching flows:', error);
+    } finally {
+      setIsLoading(false);
     }
+    setIsLoading(false);
   }, [user]);
 
   const filteredFlows = flows.filter(flow =>
@@ -169,6 +178,13 @@ export default function FlowPage() {
     }
   }, [fetchFlows]);
 
+  const FlowSkeleton = () => (
+    <div className="p-3 border-b border-gray-200">
+      <Skeleton className="h-5 w-3/4 mb-2" />
+      <Skeleton className="h-4 w-1/2" />
+    </div>
+  );
+
   return (
     <div className="p-4 flex h-[89vh]">
       <Card className="w-[15vw] ml-[2vw] mr-2 overflow-hidden shadow-lg">
@@ -184,48 +200,53 @@ export default function FlowPage() {
             className="w-full"
           />
           <div className="h-[58vh] overflow-auto">
-            {filteredFlows.map((flow) => (
-              <div
-                key={flow.id}
-                className={`p-3 border-b border-gray-200 hover:bg-gray-100 cursor-pointer ${selectedFlow === flow.id ? 'bg-blue-100' : ''} flex justify-between items-center`}
-              >
-                <div onClick={() => setSelectedFlow(flow.id)}>
-                  <h3 className="font-semibold">{flow.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {format(new Date(flow.createdAt), 'MMM d, yyyy HH:mm')}
-                  </p>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <MoreVertical className="h-5 w-5 text-gray-500" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e: any) => e.preventDefault()}>
-                          Delete
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure delete {flow.name}?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the flow
-                            and remove its data from our servers.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteFlow(flow.id)}>
+            {isLoading ? (
+              // Render skeletons while loading
+              Array(5).fill(0).map((_, index) => <FlowSkeleton key={index} />)
+            ) : (
+              filteredFlows.map((flow) => (
+                <div
+                  key={flow.id}
+                  className={`p-3 border-b border-gray-200 hover:bg-gray-100 cursor-pointer ${selectedFlow === flow.id ? 'bg-blue-100' : ''} flex justify-between items-center`}
+                >
+                  <div onClick={() => setSelectedFlow(flow.id)}>
+                    <h3 className="font-semibold">{flow.name}</h3>
+                    <p className="text-sm text-gray-500">
+                      {format(new Date(flow.createdAt), 'MMM d, yyyy HH:mm')}
+                    </p>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MoreVertical className="h-5 w-5 text-gray-500" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem onSelect={(e: any) => e.preventDefault()}>
                             Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure delete {flow.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will permanently delete the flow
+                              and remove its data from our servers.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteFlow(flow.id)}>
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

@@ -91,7 +91,7 @@ export function AsideComponent({ onViewChange, currentView }: { onViewChange: (v
           <Link
             href="#"
             onClick={() => onViewChange('novel')}
-            className={`group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'novel' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
+            className={`group flex hidden h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full ${currentView === 'novel' ? 'bg-[#6c47ff] text-primary-foreground' : 'bg-background text-muted-foreground'} text-lg font-semibold md:h-8 md:w-8 md:text-base`}
           >
             <Pencil className="h-4 w-4 transition-all group-hover:scale-110" />
             <span className="sr-only">Novel Text</span>

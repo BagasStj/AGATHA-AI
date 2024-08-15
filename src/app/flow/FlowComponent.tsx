@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText, FileSearch } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText, FileSearch, Table } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
@@ -639,7 +639,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               </Button>
               {nodes.find(node => node.data.nodeType === "Knowledge Document") && (
                 <Button onClick={onViewDocument} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff] text-black hover:text-white" title="View Document">
-                  <FileSearch className="h-5 w-5" />
+                  <Table className="h-5 w-5" />
                 </Button>
               )}
               <Button onClick={onSave} variant="ghost" className="ml-2 bg-[#f4f4f4] hover:bg-[#6c47ff]  text-black hover:text-white" title="Save">

@@ -192,11 +192,11 @@ export function HeaderComponent({ currentUser, onLogout, currentView, onViewChan
       </Breadcrumb>
 
       <div className="relative ml-auto flex-1 md:max-w-xs">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search  className="absolute hidden left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <Input
           type="search"
           placeholder="Search..."
-          className="w-full rounded-full bg-gray-100 pl-10 pr-4 focus:bg-white focus:ring-2 focus:ring-blue-500"
+          className="w-full hidden rounded-full bg-gray-100 pl-10 pr-4 focus:bg-white focus:ring-2 focus:ring-blue-500"
         />
       </div>
       <div>

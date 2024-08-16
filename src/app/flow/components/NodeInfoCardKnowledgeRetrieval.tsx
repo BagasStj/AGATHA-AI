@@ -31,6 +31,9 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     const { user } = useUser();
 
     const { toast } = useToast();
+    useEffect(() => {
+        setFileName(undefined);
+    }, [user]);
 
     useEffect(() => {
         if (node) {
@@ -72,6 +75,12 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
 
             const data = await response.json();
             console.log('API Response:', data);
+            toast({
+                title: "Success",
+                description: "File uploaded successfully.",
+                duration: 5000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
             setIsLoading(false);
             onClose();
             return data;
@@ -83,7 +92,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     };
 
     const handleSave = async () => {
-        if (!fileName || !file || !user) {
+        if (!fileName || !user) {
             alert('Please upload a file before saving.');
             return;
         }
@@ -128,13 +137,13 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 await fetchUpserrt();
                 onUpdateNode(node.id, {
                     label: title,
-                    pdfFile: file,
+                    pdfFile: file!,
                     fileName: fileName,
                     description: description,
                 });
 
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(file!);
 
         } catch (error) {
             console.error('Error in handleSave:', error);
@@ -144,8 +153,9 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 duration: 5000,
                 variant: "destructive",
             });
+            setIsLoading(false);
         } finally {
-            setIsLoading(false); // Set isLoading to false after handleSave is completed
+            // setIsLoading(false); // Set isLoading to false after handleSave is completed
         }
     };
     const handleFileUpload = (uploadedFile: File) => {

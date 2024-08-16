@@ -107,8 +107,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         formData.append("tableName", "documents");
         formData.append("queryName", "match_documents");
         formData.append("pineconeIndex", `flowise-ai-${user.username}`);
-        formData.append("modelName", model);
-        // formData.append("question", input);
+        // formData.append("modelName", model);
+        formData.append("question", input);
 
         const response = await fetch(
           "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/52ff5341-453e-48b5-a243-fe203b7c65fa",

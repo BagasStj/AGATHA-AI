@@ -115,8 +115,6 @@ export default function PhoneCall() {
   const [contact, setContact] = useState<string>('');
   const [refreshHistory, setRefreshHistory] = useState(0);
   const [activeTab, setActiveTab] = useState('llm-model');
-  const [file, setFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState<string | undefined>(undefined);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<PhoneCallFormData>({
     resolver: zodResolver(PhoneCallSchema),
@@ -153,9 +151,6 @@ export default function PhoneCall() {
       const client = new VapiClient(VAPI_PUBLIC_KEY);
       setVapiClient(client);
     }
-    // Clear fileName and file when the component is first mounted
-    setFileName(undefined);
-    setFile(null);
   }, []);
 
   const startCall = useCallback(async (data: PhoneCallFormData) => {

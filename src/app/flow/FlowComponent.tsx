@@ -12,7 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import ChatDialog from './components/ChatDialog'; // Anda perlu membuat komponen ini
-import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText, FileSearch, Table } from 'lucide-react';
+import { FileText, Play, Plus, Save, SaveAll, Trash2, Home, CheckSquare, Phone, Brain, Goal, FilePlus, ChevronRight, BookOpen, Link, ScrollText, FileSearch, Table, Loader2 } from 'lucide-react';
 import { format } from 'date-fns/format';
 import { Card, CardContent } from '@/components/ui/card';
 import VapiClient from '@vapi-ai/web';
@@ -95,6 +95,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
   const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
   const [isNodeInfoLoading, setIsNodeInfoLoading] = useState(false);
+  const [isVapiCalling, setisVapiCalling] = useState(false)
 
   const { user } = useUser();
 
@@ -214,8 +215,19 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     );
   }, [setNodes]);
 
-  const closeNodeInfo = useCallback(() => {
-    if (!isNodeInfoLoading) {
+  const closeNodeInfo = useCallback((feature: string) => {
+    if (feature === 'documentUpload') {
+      if (!isNodeInfoLoading) {
+        setSelectedNode(null);
+        // setShowChatDialog(false);
+        setNodes((nds) =>
+          nds.map((n) => ({
+            ...n,
+            style: { ...n.style, border: undefined },
+          }))
+        );
+      }
+    } else {
       setSelectedNode(null);
       // setShowChatDialog(false);
       setNodes((nds) =>
@@ -224,7 +236,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           style: { ...n.style, border: undefined },
         }))
       );
+
     }
+
   }, [setNodes, isNodeInfoLoading]);
 
   const handleNodeInfoLoadingChange = useCallback((isLoading: boolean) => {
@@ -318,12 +332,12 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
       });
 
       // Update URL and load the new flow
-      if (typeof window !== 'undefined') {
-        window.history.pushState({}, '', `/flow/${savedFlow.id}`);
-      }
+      // if (typeof window !== 'undefined') {
+      //   window.history.pushState({}, '', `/flow/${savedFlow.id}`);
+      // }
 
       // Load the newly saved flow
-      await loadFlow(savedFlow.id);
+      // await loadFlow(savedFlow.id);
       selectedFlowId = savedFlow.id;
     } catch (error) {
       console.error('Error saving flow:', error);
@@ -333,7 +347,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         variant: "destructive",
       });
     }
-  }, [nodes, edges, toast, onFlowSaved, user, loadFlow]);
+  }, [nodes, edges, toast, user, loadFlow, onFlowSaved]);
 
   const onSave = useCallback(async () => {
     if (!currentFlowId) {
@@ -362,7 +376,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         className: "bg-green-100 border-green-400 text-green-700",
       });
 
-      onFlowSaved(updatedFlow);
+      // onFlowSaved(updatedFlow);
       setFlowName(updatedFlow.name || "Untitled Flow");
       setLastEditTime(new Date(updatedFlow.updatedAt || updatedFlow.createdAt));
     } catch (error) {
@@ -373,7 +387,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         variant: "destructive",
       });
     }
-  }, [currentFlowId, nodes, edges, toast, onFlowSaved, onSaveAs]);
+  }, [currentFlowId, nodes, edges, toast, onSaveAs]);
 
 
   const onPublish = useCallback(async () => {
@@ -474,10 +488,10 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id , type :'flow'}),
+        body: JSON.stringify({ userId: user.id, type: 'flow' }),
       });
       const { success } = await response.json();
-      
+
       if (!success) {
         toast({
           title: "Rate limit exceeded",
@@ -487,7 +501,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         return;
       }
 
-
+      setisVapiCalling(true)
       try {
         const call = await vapiClient.start({
           model: {
@@ -514,10 +528,10 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         });
         vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" }));
         vapiClient.on('call-end', () => {
+          setisVapiCalling(false)
           toast({ title: "Call Status", description: "Call ended" });
           setShowVapiPopup(false);
         });
-
       } catch (error) {
         console.error('Error starting VAPI call:', error);
         toast({
@@ -525,6 +539,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
           description: "Failed to start the VAPI call. Please try again.",
           variant: "destructive",
         });
+        setisVapiCalling(false)
       }
     } else {
       setShowChatDialog(true);
@@ -655,10 +670,31 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               {/* <Button onClick={onSaveAs} variant="ghost" className="ml-2 bg-blue-500 hover:bg-blue-400 text-white" title="Save As">
                 <SaveAll className="h-5 w-5" />
               </Button> */}
-              <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-green-500 hover:bg-[#f4f4f4] text-white">
-                <Play className="h-5 w-5 mr-2" />
-                Run
-              </Button>
+              {nodes.find(node => node.data.nodeType === 'vapi') ? (
+                <Button 
+                  onClick={onPublish} 
+                  variant="ghost" 
+                  className={`ml-2 items-center ${isVapiCalling ? 'bg-green-300' : 'bg-green-500'} hover:bg-[#f4f4f4] text-white`}
+                  disabled={isVapiCalling}
+                >
+                  {isVapiCalling ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      Calling...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-5 w-5 mr-2" />
+                      Call
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button onClick={onPublish} variant="ghost" className="ml-2  items-center bg-green-500 hover:bg-[#f4f4f4] text-white">
+                  <Play className="h-5 w-5 mr-2" />
+                  Run
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
@@ -725,7 +761,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               onNodeClick={onNodeClick}
               onNodeDrag={onNodeDrag}
               onNodeDragStop={onNodeDragStop}
-              onPaneClick={closeNodeInfo}
+              onPaneClick={() => closeNodeInfo('reactflow')}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               proOptions={proOptions}
@@ -740,32 +776,32 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               selectedNode.data.nodeType === 'vapi' ? (
                 <NodeInfoCardVapi
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                  onClose={closeNodeInfo}
+                  onClose={() => closeNodeInfo('nodeInfoVapi')}
                   onUpdateNode={onUpdateNodevapi}
                 />
               ) : selectedNode.data.nodeType === 'LLM By Knowledge' ? (
                 <NodeInfoCardDoc
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                  onClose={closeNodeInfo}
+                  onClose={() => closeNodeInfo('nodeInfoDoc')}
                   onUpdateNode={onUpdateNode}
                 />
               ) : selectedNode.data.nodeType === 'Knowledge Document' ? (
                 <NodeInfoCardKnowledgeRetrieval
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                  onClose={closeNodeInfo}
+                  onClose={() => closeNodeInfo('documentUpload')}
                   onUpdateNode={onUpdateNode}
                   onLoadingChange={handleNodeInfoLoadingChange}
                 />
               ) : selectedNode.data.nodeType === 'Knowledge URL' ? (
                 <NodeInfoCardURL
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                  onClose={closeNodeInfo}
+                  onClose={() => closeNodeInfo('url')}
                   onUpdateNode={onUpdateNode}
                 />
               ) : (
                 <NodeInfoCard
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
-                  onClose={closeNodeInfo}
+                  onClose={() => closeNodeInfo('infocard')}
                   onUpdateNode={onUpdateNode}
                 />
               )

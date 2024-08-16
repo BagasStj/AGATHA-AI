@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Brain, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -29,6 +30,7 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [description, setDescription] = useState('');
     const [model, setModel] = useState('gpt-3.5-turbo');
+    const { toast } = useToast();
 
     useEffect(() => {
         if (node) {
@@ -51,6 +53,12 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
           topK,
           description: description,
           model: model,
+        });
+        toast({
+            title: "Success",
+            description: "Node updated successfully.",
+            duration: 5000,
+            className: "bg-green-100 border-green-400 text-green-700",
         });
         onClose();
     };

@@ -62,8 +62,8 @@ const CustomNode = ({ data }: { data: any }) => {
         </div>
       </div>
 
-      {!isStart && <Handle type="target" position={Position.Left} className="w-16 !bg-teal-500 shadow-sm" />}
-      {!isEnd && <Handle type="source" position={Position.Right} className="w-16 !bg-teal-500 shadow-sm" />}
+      {!isStart && <Handle type="target"  position={Position.Left} className="w-[15px] h-[15px] !bg-teal-500 shadow-sm" />}
+      {!isEnd && <Handle type="source" position={Position.Right} className="w-[15px] h-[15px] !bg-teal-500 shadow-sm" />}
     </div>
   );
 };

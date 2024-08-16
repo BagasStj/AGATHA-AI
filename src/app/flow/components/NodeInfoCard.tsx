@@ -3,6 +3,7 @@ import { Node } from '@xyflow/react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Brain, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -34,6 +35,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const [frequencyPenalty, setFrequencyPenalty] = useState(0);
     const [maxTokens, setMaxTokens] = useState(2048);
     const [description, setDescription] = useState('');
+    const { toast } = useToast();
 
     useEffect(() => {
         if (node) {
@@ -64,6 +66,12 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
             frequencyPenalty,
             maxTokens,
             description: description
+        });
+        toast({
+            title: "Success",
+            description: "Node updated successfully.",
+            duration: 5000,
+            className: "bg-green-100 border-green-400 text-green-700",
         });
         onClose();
     };

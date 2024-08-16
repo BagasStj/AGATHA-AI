@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Phone, Save } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -35,6 +36,7 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
     const [presencePenalty, setPresencePenalty] = useState(0);
     const [frequencyPenalty, setFrequencyPenalty] = useState(0);
     const [maxTokens, setMaxTokens] = useState(2048);
+    const { toast } = useToast();
     const [defaultCall, setDefaultCall] = useState<any>({
         firstMessage: "Hai beb, can I help you today?",
         model: {
@@ -67,6 +69,12 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
         onUpdateNode(node.id, {
             label: title,
             setVapi :{...defaultCall},
+        });
+        toast({
+            title: "Success",
+            description: "Node updated successfully.",
+            duration: 5000,
+            className: "bg-green-100 border-green-400 text-green-700",
         });
         onClose();
     };

@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Brain, Link, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs';
+import { useToast } from '@/components/ui/use-toast';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -32,6 +33,8 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const [isLoading, setIsLoading] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const { user } = useUser();
+    const { toast } = useToast();
+
 
 
     useEffect(() => {
@@ -54,12 +57,24 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
         });
         try {
             await fetchUpserrt();
+            toast({
+                title: "Success",
+                description: "Node updated successfully.",
+                duration: 5000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
             onClose();
         } catch (error) {
             console.error('Error in fetchUpserrt:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
             setIsLoading(false);
+            toast({
+                title: "Success",
+                description: "Node updated successfully.",
+                duration: 5000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
             onClose();
         }
     };

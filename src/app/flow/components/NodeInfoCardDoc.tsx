@@ -3,6 +3,7 @@ import { Node } from '@xyflow/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Brain, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface NodeData extends Record<string, unknown> {
     label: string;
@@ -10,6 +11,7 @@ interface NodeData extends Record<string, unknown> {
     chunkOverlap?: number;
     topK?: number;
     pdfFile?: File;
+    model?: string;
 }
 
 interface NodeInfoCardDocProps {
@@ -26,6 +28,7 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
     const [pdfFile, setPdfFile] = useState<File | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [description, setDescription] = useState('');
+    const [model, setModel] = useState('gpt-3.5-turbo');
 
     useEffect(() => {
         if (node) {
@@ -34,26 +37,23 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
             setChunkOverlap(node.data.chunkOverlap || 1000);
             setTopK(node.data.topK || 4);
             setDescription(node.data.description as string || node.data.nodeType as string);
+            setModel(node.data.model as string || 'gpt-3.5-turbo');
         }
     }, [node]);
 
     if (!node) return null;
 
     const handleSave = () => {
-        // if (!pdfFile) {
-        //   alert('Please upload a PDF file before saving.');
-        //   return;
-        // }
         onUpdateNode(node.id, {
           label: title,
           chunkSize,
           chunkOverlap,
           topK,
           description: description,
-        //   pdfFile: pdfFile,
+          model: model,
         });
         onClose();
-      };
+    };
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -98,7 +98,8 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     />
                 </div>
-                <div>
+                
+                {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Chunk Size</label>
                     <Input
                         type="number"
@@ -115,8 +116,8 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
                         onChange={(e) => setChunkOverlap(Number(e.target.value))}
                         className="w-full"
                     />
-                </div>
-                <div>
+                </div> */}
+                {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Top K</label>
                     <Input
                         type="number"
@@ -124,8 +125,20 @@ const NodeInfoCardDoc: React.FC<NodeInfoCardDocProps> = ({ node, onClose, onUpda
                         onChange={(e) => setTopK(Number(e.target.value))}
                         className="w-full"
                     />
-                </div>
+                </div> */}
                 
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                    <Select value={model} onValueChange={setModel}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="gpt-3.5-turbo">gpt-3.5-turbo</SelectItem>
+                            <SelectItem value="gpt-3.5-turbo-16k">gpt-3.5-turbo-16k</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
             <div className="p-6 pt-4 border-t border-gray-200">
                 <Button

@@ -17,9 +17,10 @@ interface NodeInfoCardKnowledgeRetrievalProps {
     node: Node<NodeData> | null;
     onClose: () => void;
     onUpdateNode: (id: string, data: Partial<NodeData>) => void;
+    onLoadingChange: (isLoading: boolean) => void; // Added this line
 }
 
-const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalProps> = ({ node, onClose, onUpdateNode }) => {
+const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalProps> = ({ node, onClose, onUpdateNode, onLoadingChange }) => {
     const [title, setTitle] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -43,6 +44,9 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
         }
     }, [node]);
 
+    useEffect(() => {
+        onLoadingChange(isLoading); // Call onLoadingChange with isLoading state
+    }, [isLoading, onLoadingChange]);
 
     if (!node) return null;
     let formData = new FormData();
@@ -79,12 +83,12 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     };
 
     const handleSave = async () => {
-        setIsLoading(true);
         if (!fileName || !file || !user) {
             alert('Please upload a file before saving.');
             return;
         }
-
+        
+        setIsLoading(true);
         try {
             const response = await fetch('/api/chat-ratelimit', {
                 method: 'POST',
@@ -141,7 +145,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                 variant: "destructive",
             });
         } finally {
-            
+            setIsLoading(false); // Set isLoading to false after handleSave is completed
         }
     };
     const handleFileUpload = (uploadedFile: File) => {
@@ -171,6 +175,12 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
         handleFileUpload(droppedFile);
     };
 
+    const handleClose = () => {
+        if (!isLoading) {
+            onClose();
+        }
+    };
+
     return (
         <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 flex flex-col max-h-[calc(100vh-6rem)]">
             <div className="p-4 flex items-center justify-between">
@@ -180,7 +190,11 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mr-2">Knowledge Document</h3>
                 </div>
-                <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <button 
+                    onClick={handleClose} 
+                    className={`text-gray-400 hover:text-gray-600 ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+                    disabled={isLoading}
+                >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>

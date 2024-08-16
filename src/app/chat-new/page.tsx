@@ -700,7 +700,9 @@ export default function ChatNewPage() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
-                  <CardTitle className='text-lg font-semibold'>{params.titlePrompt}</CardTitle>
+                  <CardTitle className='text-lg font-semibold'>
+                    {params.titlePrompt === "New Chat" ? "Prompt" : params.titlePrompt}
+                  </CardTitle>
                   <CardDescription className='text-xs text-gray-600'>
                     {params.prompt.length > 50
                       ? params.prompt.slice(0, 50) + '...'
@@ -709,7 +711,7 @@ export default function ChatNewPage() {
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="w-[55vw]">
-                <p><strong>{params.titlePrompt}</strong></p>
+                <p><strong>{params.titlePrompt === "New Chat" ? "Prompt" : params.titlePrompt}</strong></p>
                 <p>{params.prompt}</p>
               </TooltipContent>
             </Tooltip>

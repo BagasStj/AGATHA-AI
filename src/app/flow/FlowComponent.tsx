@@ -94,6 +94,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const [showVapiPopup, setShowVapiPopup] = useState(false);
   const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
   const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
+  const [isNodeInfoLoading, setIsNodeInfoLoading] = useState(false);
 
   const { user } = useUser();
 
@@ -214,15 +215,21 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   }, [setNodes]);
 
   const closeNodeInfo = useCallback(() => {
-    setSelectedNode(null);
-    // setShowChatDialog(false);
-    setNodes((nds) =>
-      nds.map((n) => ({
-        ...n,
-        style: { ...n.style, border: undefined },
-      }))
-    );
-  }, [setNodes]);
+    if (!isNodeInfoLoading) {
+      setSelectedNode(null);
+      // setShowChatDialog(false);
+      setNodes((nds) =>
+        nds.map((n) => ({
+          ...n,
+          style: { ...n.style, border: undefined },
+        }))
+      );
+    }
+  }, [setNodes, isNodeInfoLoading]);
+
+  const handleNodeInfoLoadingChange = useCallback((isLoading: boolean) => {
+    setIsNodeInfoLoading(isLoading);
+  }, []);
 
   const proOptions = useMemo(() => ({ hideAttribution: true }), []);
 
@@ -747,6 +754,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
                   onClose={closeNodeInfo}
                   onUpdateNode={onUpdateNode}
+                  onLoadingChange={handleNodeInfoLoadingChange}
                 />
               ) : selectedNode.data.nodeType === 'Knowledge URL' ? (
                 <NodeInfoCardURL

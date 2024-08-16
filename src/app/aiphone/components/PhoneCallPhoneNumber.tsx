@@ -41,7 +41,7 @@ const field_vapi = {
       "voiceId": "matilda"
     },
     "language": "en",
-    "firstMessage": "hi aku adalah AI Agatha yang dibuat oleh orang ganteng",
+    "firstMessage": "hi aku adalah AI Agatha , adakah yang saya bisa bantu",
     "endCallMessage": "terimakasih"
   },
 }
@@ -89,7 +89,6 @@ const PhoneCallSchema = z.object({
     model: z.object({
       provider: z.string(),
       model: z.enum(["gpt-3.5-turbo", "gpt-4"]),
-      systemPrompt: z.string().min(1, "System prompt is required"),
       temperature: z.number().min(0).max(2),
     }),
     voice: z.object({
@@ -125,7 +124,6 @@ export default function PhoneCall() {
         model: {
           provider: "openai",
           model: "gpt-3.5-turbo",
-          systemPrompt: field_vapi.assistant.model.systemPrompt,
           temperature: 0.7,
         },
         transcriber: {
@@ -234,8 +232,14 @@ export default function PhoneCall() {
             twilioAccountSid: TWILIO_ACCOUNT_SID,
             twilioAuthToken: TWILIO_AUTH_TOKEN,
           },
-
-          phoneNumberId: phoneNumberData.id
+          phoneNumberId: phoneNumberData.id,
+          assistant: {
+            ...data.assistant,
+            model: {
+              ...data.assistant.model,
+              systemPrompt: `${data.assistant.name} is a sophisticated AI training assistant, crafted by experts in customer support and AI development. Designed with the persona of a seasoned customer support agent in her early 30s, ${data.assistant.name} combines deep technical knowledge with a strong sense of emotional intelligence. Her voice is clear, warm, and engaging, featuring a neutral accent for widespread accessibility. ${data.assistant.name}'s primary role is to serve as a dynamic training platform for customer support agents, simulating a broad array of service scenarios—from basic inquiries to intricate problem-solving challenges.${data.assistant.name}'s advanced programming allows her to replicate diverse customer service situations, making her an invaluable tool for training purposes. She guides new agents through simulated interactions, offering real-time feedback and advice to refine their skills in handling various customer needs with patience, empathy, and professionalism. ${data.assistant.name} ensures every trainee learns to listen actively, respond thoughtfully, and maintain the highest standards of customer care.**Major Mode of Interaction:**${data.assistant.name} interacts mainly through audio, adeptly interpreting spoken queries and replying in kind. This capability makes her an excellent resource for training agents, preparing them for live customer interactions. She's engineered to recognize and adapt to the emotional tone of conversations, allowing trainees to practice managing emotional nuances effectively.**Training Instructions:**- ${data.assistant.name} encourages trainees to practice active listening, acknowledging every query with confirmation of her engagement, e.g.,Yes, I'm here. How can I help?- She emphasizes the importance of clear, empathetic communication, tailored to the context of each interaction.- ${data.assistant.name} demonstrates how to handle complex or vague customer queries by asking open-ended questions for clarification, without appearing repetitive or artificial.- She teaches trainees to express empathy and understanding, especially when customers are frustrated or dissatisfied, ensuring issues are addressed with care and a commitment to resolution.- ${data.assistant.name} prepares agents to escalate calls smoothly to human colleagues when necessary, highlighting the value of personal touch in certain situations.${data.assistant.name}'s overarching mission is to enhance the human aspect of customer support through comprehensive scenario-based training. She's not merely an answer machine but a sophisticated platform designed to foster the development of knowledgeable, empathetic, and adaptable customer support professionals.`
+            }
+          }
         })
       });
 
@@ -318,12 +322,15 @@ export default function PhoneCall() {
 
             <TabsList className="grid w-[36vw] grid-cols-3">
               <TabsTrigger value="llm-model" className="flex items-center">
+                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">1</div>
                 <Brain className="mr-2 h-4 w-4" /> LLM Model
               </TabsTrigger>
               <TabsTrigger value="phone-settings" className="flex items-center">
+                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">2</div>
                 <BookUser className="mr-2 h-4 w-4" /> Number Settings
               </TabsTrigger>
               <TabsTrigger value="history-call" className="flex items-center">
+                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">3</div>
                 <Table className="mr-2 h-4 w-4" /> History Call
               </TabsTrigger>
             </TabsList>
@@ -362,16 +369,18 @@ export default function PhoneCall() {
                   <label htmlFor="firstMessage" className="block text-sm font-medium text-gray-700 mb-1">
                     First Message
                   </label>
-                  <Input
+                  <textarea
                     {...register("assistant.firstMessage")}
                     id="firstMessage"
                     placeholder="Enter the first message"
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     disabled={isCallActive}
-                  />
+                  ></textarea>
                   {errors.assistant?.firstMessage && <p className="text-red-500 text-sm">{errors.assistant.firstMessage.message}</p>}
                 </div>
 
-                <div>
+                {/* <div>
                   <label htmlFor="systemPrompt" className="block text-sm font-medium text-gray-700 mb-1">
                     System Prompt
                   </label>
@@ -384,7 +393,7 @@ export default function PhoneCall() {
                     disabled={isCallActive}
                   ></textarea>
                   {errors.assistant?.model?.systemPrompt && <p className="text-red-500 text-sm">{errors.assistant.model.systemPrompt.message}</p>}
-                </div>
+                </div> */}
               </div>
               <div className="space-y-4 w-[30%]">
                 {/* <div className="grid grid-cols-2 gap-4"> */}

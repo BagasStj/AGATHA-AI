@@ -101,12 +101,14 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         if (!knowledgeNode.data.pdfFile || !(knowledgeNode.data.pdfFile instanceof Blob)) {
           throw new Error('Invalid PDF file');
         }
+        let model: any = pdfNode.data.model || 'gpt-3.5-turbo';
+        console.log('Knowledge Document', pdfNode);
         formData.append("files", knowledgeNode.data.pdfFile);
         formData.append("tableName", "documents");
         formData.append("queryName", "match_documents");
         formData.append("pineconeIndex", `flowise-ai-${user.username}`);
-
-        formData.append("question", input);
+        formData.append("modelName", model);
+        // formData.append("question", input);
 
         const response = await fetch(
           "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/52ff5341-453e-48b5-a243-fe203b7c65fa",

@@ -114,6 +114,9 @@ export default function PhoneCall() {
   const [activeCall, setActiveCall] = useState<any>(null);
   const [contact, setContact] = useState<string>('');
   const [refreshHistory, setRefreshHistory] = useState(0);
+  const [activeTab, setActiveTab] = useState('llm-model');
+  const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | undefined>(undefined);
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<PhoneCallFormData>({
     resolver: zodResolver(PhoneCallSchema),
@@ -150,6 +153,9 @@ export default function PhoneCall() {
       const client = new VapiClient(VAPI_PUBLIC_KEY);
       setVapiClient(client);
     }
+    // Clear fileName and file when the component is first mounted
+    setFileName(undefined);
+    setFile(null);
   }, []);
 
   const startCall = useCallback(async (data: PhoneCallFormData) => {
@@ -317,20 +323,20 @@ export default function PhoneCall() {
       </div>
 
       <form onSubmit={handleSubmit(startCall)}>
-        <Tabs defaultValue="llm-model" className="w-full">
+        <Tabs defaultValue="llm-model" className="w-full" onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-4">
 
             <TabsList className="grid w-[36vw] grid-cols-3">
               <TabsTrigger value="llm-model" className="flex items-center">
-                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">1</div>
+                <div className={`mr-2 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs ${activeTab === 'llm-model' ? 'bg-purple-500' : 'bg-gray-400'}`}>1</div>
                 <Brain className="mr-2 h-4 w-4" /> LLM Model
               </TabsTrigger>
               <TabsTrigger value="phone-settings" className="flex items-center">
-                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">2</div>
+                <div className={`mr-2 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs ${activeTab === 'phone-settings' ? 'bg-purple-500' : 'bg-gray-400'}`}>2</div>
                 <BookUser className="mr-2 h-4 w-4" /> Number Settings
               </TabsTrigger>
               <TabsTrigger value="history-call" className="flex items-center">
-                <div className="mr-2 bg-gray-400 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs">3</div>
+                <div className={`mr-2 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs ${activeTab === 'history-call' ? 'bg-purple-500' : 'bg-gray-400'}`}>3</div>
                 <Table className="mr-2 h-4 w-4" /> History Call
               </TabsTrigger>
             </TabsList>

@@ -31,16 +31,15 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     const { user } = useUser();
 
     const { toast } = useToast();
-    useEffect(() => {
-        setFileName(undefined);
-    }, [user]);
+
 
     useEffect(() => {
         if (node) {
             setTitle(node.data.label || '');
-            setFileName(node.data.fileName);
-            if (node.data.file instanceof File) {
-                setFile(node.data.file);
+            console.log('node.data.file', node.data , typeof node.data.pdfFile);
+            if (node.data.pdfFile instanceof File) {
+                setFileName(node.data.fileName);
+                setFile(node.data.pdfFile);
             }
             setDescription(node.data.description as string || node.data.nodeType as string);
 
@@ -61,7 +60,14 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             formData.append("files", file);
             formData.append("legacyBuild", 'true')
             formData.append("pineconeIndex", `flowise-ai-${user.username}`)
+            onUpdateNode(node.id, {
+                label: title,
+                pdfFile: file,
+                fileName: fileName,
+                description: description,
+            });
         }
+        
         try {
             const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/52ff5341-453e-48b5-a243-fe203b7c65fa', {
                 method: 'POST',
@@ -96,13 +102,13 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             alert('Please upload a file before saving.');
             return;
         }
-        
+
         setIsLoading(true);
         try {
             const response = await fetch('/api/chat-ratelimit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: user.id ,type:'flow' }),
+                body: JSON.stringify({ userId: user.id, type: 'flow' }),
             });
             const { success } = await response.json();
 
@@ -135,12 +141,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     throw new Error('Failed to save file data');
                 }
                 await fetchUpserrt();
-                onUpdateNode(node.id, {
-                    label: title,
-                    pdfFile: file!,
-                    fileName: fileName,
-                    description: description,
-                });
+             
 
             };
             reader.readAsDataURL(file!);
@@ -200,8 +201,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     </div>
                     <h3 className="text-lg font-bold text-gray-800 mr-2">Knowledge Document</h3>
                 </div>
-                <button 
-                    onClick={handleClose} 
+                <button
+                    onClick={handleClose}
                     className={`text-gray-400 hover:text-gray-600 ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                     disabled={isLoading}
                 >

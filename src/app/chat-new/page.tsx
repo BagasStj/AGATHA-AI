@@ -35,12 +35,12 @@ import { Loader2 } from "lucide-react";
 const DEFAULT_PROMPT: any = {
   id: 'default',
   title: 'Chat AI',
-  prompt: 'You are a helpful AI assistant. Answer the user\'s questions to the best of your ability.',
-  temperature: 0.2,
+  prompt: 'You are an AI with extensive knowledge capable of answering a wide range of questions, including those related to previous inquiries. You record each question posed by the user and store it in your memory, enabling you to provide answers to new questions based on previous ones. Your task is to deliver accurate and comprehensive responses, leveraging context from earlier questions when relevant.',
+  temperature: 0.20,
   topP: 1,
-  presencePenalty: 0,
-  frequencyPenalty: 0,
-  maxTokens: 512,
+  presencePenalty: 0.48,
+  frequencyPenalty: 0.52,
+  maxTokens: 1044,
 };
 
 export default function ChatNewPage() {

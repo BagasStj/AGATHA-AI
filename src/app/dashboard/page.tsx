@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
   const router = useRouter();  
-  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new'>('users');
+  const [currentView, setCurrentView] = useState<'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new'>('chat');
 
   const handleViewChange = (view: 'users' | 'chat' | 'email' | 'product' | 'novel' | 'flow' | 'aiphone' | 'chat-flowise' | 'chat-new') => {
     setCurrentView(view);

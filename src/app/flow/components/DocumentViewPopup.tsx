@@ -168,7 +168,7 @@ const DocumentViewPopup: React.FC<DocumentViewPopupProps> = ({ isOpen, onClose, 
                     documents.map((doc, index) => (
                       <TableRow key={doc.id} className="hover:bg-gray-100 transition-colors">
                         <TableCell className="font-medium">{index + 1}</TableCell>
-                        <TableCell className="flex items-center">
+                        <TableCell className="flex items-center w-[243px]">
                           <FileText className="mr-2 h-4 w-4 text-blue-500" />
                           <span className="font-medium">{doc.name}</span>
                         </TableCell>

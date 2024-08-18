@@ -503,33 +503,62 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
       setisVapiCalling(true)
       try {
-        const call = await vapiClient.start({
-          model: {
-            provider: defaultCall.model.provider,
-            model: defaultCall.model.model,
-            temperature: defaultCall.model.temperature,
-            messages: [
-              {
-                role: defaultCall.model.messages[0].role,
-                content: defaultCall.model.messages[0].content,
-              },
-            ],
-          },
-          voice: {
-            provider: "11labs",
-            voiceId: defaultCall.voice.voiceId,
-          },
-          // prompt: defaultCall.firstMessage, // Add the prompt parameter here
-        });
+        const call = await vapiClient.start(
+          {
+            "firstMessage": defaultCall.firstMessage,
+            "transcriber": {
+              "model": "nova-2",
+              "language": "id",
+              "provider": "deepgram"
+            },
+            "model": {
+              "provider": defaultCall.model.provider,
+              "model": defaultCall.model.model,
+              messages: [
+                {
+                  role: defaultCall.model.messages[0].role,
+                  content: defaultCall.model.messages[0].content,
+                },
+              ],
+              // "systemPrompt": "",
+              "temperature": defaultCall.model.temperature
+            },
+            "voice": {
+              "provider": "11labs",
+              "voiceId": defaultCall.voice.voiceId
+            },
+            // "language": "en",
+            "endCallMessage": "terimakasih"
+
+          }
+          // {
+          //   model: {
+          //     provider: defaultCall.model.provider,
+          //     model: defaultCall.model.model,
+          //     temperature: defaultCall.model.temperature,
+          //     messages: [
+          //       {
+          //         role: defaultCall.model.messages[0].role,
+          //         content: defaultCall.model.messages[0].content,
+          //       },
+          //     ],
+          //   },
+          //   voice: {
+          //     provider: "11labs",
+          //     voiceId: defaultCall.voice.voiceId,
+          //   },
+          //   // prompt: defaultCall.firstMessage, // Add the prompt parameter here
+          // }
+        );
 
         vapiClient.on('call-start', () => {
-          toast({ title: "Call Status", description: "Ringing..." });
+          toast({ title: "Call Status", description: "Ringing...",className: "bg-green-100 border-green-400 text-green-700" });
           setShowVapiPopup(true);
         });
-        vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" }));
+        vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" ,className: "bg-green-100 border-green-400 text-green-700"}));
         vapiClient.on('call-end', () => {
           setisVapiCalling(false)
-          toast({ title: "Call Status", description: "Call ended" });
+          toast({ title: "Call Status", description: "Call ended", className: "bg-green-100 border-green-400 text-green-700" });
           setShowVapiPopup(false);
         });
       } catch (error) {
@@ -671,9 +700,9 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                 <SaveAll className="h-5 w-5" />
               </Button> */}
               {nodes.find(node => node.data.nodeType === 'vapi') ? (
-                <Button 
-                  onClick={onPublish} 
-                  variant="ghost" 
+                <Button
+                  onClick={onPublish}
+                  variant="ghost"
                   className={`ml-2 items-center ${isVapiCalling ? 'bg-green-300' : 'bg-green-500'} hover:bg-[#f4f4f4] text-white`}
                   disabled={isVapiCalling}
                 >

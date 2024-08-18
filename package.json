@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.37",
@@ -105,11 +107,14 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/dagre": "^0.7.52",
+    "@types/jest": "^29.5.12",
+    "@types/mocha": "^10.0.7",
     "@types/node": "20.14.12",
     "@types/react": "18.3.3",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
+    "cypress": "^13.13.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8",

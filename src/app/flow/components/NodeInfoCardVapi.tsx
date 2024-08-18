@@ -29,6 +29,39 @@ interface NodeInfoCardVapiProps {
     onUpdateNode: (id: string, data: Partial<NodeData>) => void;
 }
 
+
+const voice = [
+    {
+      id: "bVMeCyTHy58xNoL34h3p",
+      name: "Jeremy",
+    },
+    {
+      id: "SOYHLrjzK2X1ezoPC6cr",
+      name: "Harry",
+    },
+    {
+      id: "jBpfuIE2acCO8z3wKNLl",
+      name: "Gigi",
+    },
+    {
+      id: "pNInz6obpgDQGcFmaJgB",
+      name: "Adam",
+    },
+    {
+      id: "TxGEqnHWrfWFTfGW9XjX",
+      name: "Josh",
+    },
+    {
+      id: "FGY2WhTYpPnrIDTdsKH5",
+      name: "Laura",
+    },
+    {
+      id: "sarah",
+      name: "Sarah",
+    },
+  ]
+  
+
 const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUpdateNode }) => {
     const [title, setTitle] = useState('');
     const [model, setModel] = useState('gpt-3.5-turbo');
@@ -38,7 +71,7 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
     const [maxTokens, setMaxTokens] = useState(2048);
     const { toast } = useToast();
     const [defaultCall, setDefaultCall] = useState<any>({
-        firstMessage: "Hai beb, can I help you today?",
+        firstMessage: "Hai , this is agatha ai voice assistant, can I help you today?",
         model: {
             provider: "openai",
             model: "gpt-3.5-turbo",
@@ -46,14 +79,14 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
             messages: [
                 {
                     role: "assistant",
-                    content: "You are an assistant.",//system prompt
+                    content: "you is a sophisticated AI training assistant, crafted by experts in customer support . Designed with the persona of a seasoned customer support agent in her early 30s, you combines deep technical knowledge with a strong sense of emotional intelligence. Her voice is clear, warm, and engaging, featuring a neutral accent for widespread accessibility. you's primary role is to serve as a dynamic training platform for customer support agents, simulating a broad array of service scenarios—from basic inquiries to intricate problem-solving challenges.you's advanced programming allows her to replicate diverse customer service situations, making her an invaluable tool for training purposes. She guides new agents through simulated interactions, offering real-time feedback and advice to refine their skills in handling various customer needs with patience, empathy, and professionalism. you ensures every trainee learns to listen actively, respond thoughtfully, and maintain the highest standards of customer care.**Major Mode of Interaction:**you interacts mainly through audio, adeptly interpreting spoken queries and replying in kind. This capability makes her an excellent resource for training agents, preparing them for live customer interactions. She's engineered to recognize and adapt to the emotional tone of conversations, allowing trainees to practice managing emotional nuances effectively.**Training Instructions:**- you encourages trainees to practice active listening, acknowledging every query with confirmation of her engagement, e.g.,Yes, I'm here. How can I help?- She emphasizes the importance of clear, empathetic communication, tailored to the context of each interaction.- you demonstrates how to handle complex or vague customer queries by asking open-ended questions for clarification, without appearing repetitive or artificial.- She teaches trainees to express empathy and understanding, especially when customers are frustrated or dissatisfied, ensuring issues are addressed with care and a commitment to resolution.- you prepares agents to escalate calls smoothly to human colleagues when necessary, highlighting the value of personal touch in certain situations.you's overarching mission is to enhance the human aspect of customer support through comprehensive scenario-based training. She's not merely an answer machine but a sophisticated platform designed to foster the development of knowledgeable, empathetic, and adaptable customer support professionals.",//system prompt
                 },
             ],
             maxTokens: 5,
         },
         voice: {
             provider: "11labs",
-            voiceId: "burt",
+            voiceId: "bVMeCyTHy58xNoL34h3p",
         },
     });
 
@@ -141,15 +174,15 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
                             <SelectValue placeholder="Select a voice" />
                         </SelectTrigger>
                         <SelectContent>
-                            {['burt', 'marissa', 'andrea', 'sarah', 'phillip', 'steve', 'joseph', 'myra', 'paula', 'ryan', 'drew', 'paul', 'mrb', 'matilda', 'mark'].map((voice) => (
-                                <SelectItem key={voice} value={voice}>
-                                    {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                            {voice.map((voice) => (
+                                <SelectItem key={voice.id} value={voice.id}>
+                                    {voice.name}
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="mb-4">
+                {/* <div className="mb-4">
                     <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                         Role
                     </label>
@@ -165,7 +198,7 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
                             ))}
                         </SelectContent>
                     </Select>
-                </div>
+                </div> */}
 
                 <div className="mb-4">
                     <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">

@@ -130,7 +130,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         const url = knowledgeNode.data.url as string;
 
         const response = await fetch(
-          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/26831c4f-6d3d-4980-aa72-f613c2b853da",
+          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/0dcc53e4-8a39-4782-8ec9-54fe26c675ba",
           {
             method: "POST",
             headers: {
@@ -141,7 +141,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
               overrideConfig: {
                 repoLink: url,
                 pineconeIndex: `flowise-ai-${user.username}`
-              }
+              },
+              "chatId": "eac55eaa-c63a-4a0f-b6b1-f60c3943dfdc",
+              "socketIOClientId": "Y7Q9hJBjTBu3OV7mAADf"
             })
           }
         );

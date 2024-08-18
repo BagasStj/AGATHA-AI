@@ -57,24 +57,19 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
         });
         try {
             await fetchUpserrt();
-            toast({
-                title: "Success",
-                description: "Node updated successfully.",
-                duration: 5000,
-                className: "bg-green-100 border-green-400 text-green-700",
-            });
+      
             onClose();
         } catch (error) {
             console.error('Error in fetchUpserrt:', error);
             // You can add a toast notification here to inform the user about the error
         } finally {
             setIsLoading(false);
-            toast({
-                title: "Success",
-                description: "Node updated successfully.",
-                duration: 5000,
-                className: "bg-green-100 border-green-400 text-green-700",
-            });
+            // toast({
+            //     title: "Success",
+            //     description: "Node updated successfully.",
+            //     duration: 5000,
+            //     className: "bg-green-100 border-green-400 text-green-700",
+            // });
             onClose();
         }
     };
@@ -84,7 +79,7 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
     const fetchUpserrt = async () => { //upsertfile
         if ( !user) {return}
         try {
-            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/26831c4f-6d3d-4980-aa72-f613c2b853da', {
+            const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/0dcc53e4-8a39-4782-8ec9-54fe26c675ba', {
                 method: 'POST',
                 headers: {
                     "Content-Type": "application/json"
@@ -104,11 +99,23 @@ const NodeInfoCard: React.FC<NodeInfoCardProps> = ({ node, onClose, onUpdateNode
             }
 
             const data = await response.json();
+            toast({
+                title: "Success",
+                description: "Node updated successfully.",
+                duration: 5000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
             console.log('API Response:', data);
             return data;
         } catch (error) {
             console.error('Error in fetchUpserrt:', error);
-            // You can add a toast notification here to inform the user about the error
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : 'An unknown error occurred',
+                duration: 5000,
+                className: "bg-red-100 border-red-400 text-red-700",
+            });
+            // Toast notification added to inform the user about the error
             return null;
         }
     };

@@ -738,7 +738,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                   <Plus className="w-6 h-6" />
                 </div>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="z-[4] w-[15vw] ml-[13vw]" >
+              <DropdownMenuContent className="z-[4] w-[18vw] ml-[18vw]" >
                 {nodeTypeList.map((nodeType) => (
                   nodeType.type === 'LLM' || nodeType.type == 'Knowledge_Retrieval' ? (
                     <DropdownMenu key={nodeType.type}>
@@ -794,7 +794,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               proOptions={proOptions}
-              defaultViewport={{ x: 0, y: 0, zoom: 0.1 }}
+              defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
               className="flex-grow "
             >
               <Controls />

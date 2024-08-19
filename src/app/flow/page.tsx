@@ -186,7 +186,7 @@ export default function FlowPage() {
   );
 
   return (
-    <div className="p-4 pt-8 pl-12 flex h-full flex-col lg:flex-row">
+    <div className="p-4 pt-8 pl-12 flex h-[91vh] flex-col lg:flex-row">
       <Card className="w-full lg:w-[20vw] xl:w-[15vw] mb-4 lg:mb-0 lg:mr-4 overflow-hidden shadow-lg">
         <CardHeader className="space-y-1 border-b-2 mb-4">
           <CardTitle className="text-xl lg:text-xl font-bold whitespace-nowrap">AI Flow Diagram</CardTitle>

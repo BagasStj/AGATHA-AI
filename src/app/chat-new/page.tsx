@@ -614,7 +614,7 @@ export default function ChatNewPage() {
   return (
     <>
       <Toaster />
-      <div className="flex flex-col lg:flex-row p-2 lg:p-4 space-y-4 lg:space-y-0 lg:space-x-4 h-full">
+      <div className="flex flex-col lg:flex-row p-2  space-y-4 lg:space-y-0 lg:space-x-4 h-[91vh] pt-8 pr-4 pl-[3.4vw]">
         {/* Left Sidebar */}
         <Card className="w-full lg:w-64 lg:max-w-[20%]">
           <CardContent className="p-4">

@@ -1,6 +1,9 @@
+/// <reference types="cypress" />
+
 describe('Flow Component', () => {
     beforeEach(() => {
-      cy.visit('/flow');
+      cy.visit('flow');
+      cy.get('body').should('be.visible'); // Wait for the page to load
       cy.intercept('GET', '/api/flows*', { fixture: 'flows.json' }).as('getFlows');
       cy.intercept('POST', '/api/flows', { statusCode: 201, fixture: 'newFlow.json' }).as('createFlow');
       cy.intercept('PUT', '/api/flows/*', { statusCode: 200, fixture: 'updatedFlow.json' }).as('updateFlow');

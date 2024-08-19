@@ -68,6 +68,22 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             });
         }
         
+        // Tambahkan pengecekan tipe file
+        console.log('[file]', file!.type);
+        if (file && file.type === 'text/csv') {
+            // Jika file adalah CSV, tidak perlu melakukan fetch
+            console.log('CSV file detected. Skipping upsert operation.');
+            toast({
+                title: "Success",
+                description: "CSV file processed successfully.",
+                duration: 5000,
+                className: "bg-green-100 border-green-400 text-green-700",
+            });
+            setIsLoading(false);
+            onClose();
+            return;
+        }
+        
         try {
             const response = await fetch('https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/52ff5341-453e-48b5-a243-fe203b7c65fa', {
                 method: 'POST',

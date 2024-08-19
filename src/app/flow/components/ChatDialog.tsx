@@ -95,6 +95,8 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       }
 
       let formData = new FormData();
+      let formData2 = new FormData();
+
 
 
       if (knowledgeNode.data.nodeType === 'Knowledge Document') {
@@ -107,16 +109,28 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         formData.append("tableName", "documents");
         formData.append("queryName", "match_documents");
         formData.append("pineconeIndex", `flowise-ai-${user.username}`);
-        // formData.append("modelName", model);
         formData.append("question", input);
 
-        const response = await fetch(
-          "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/52ff5341-453e-48b5-a243-fe203b7c65fa",
-          {
-            method: "POST",
-            body: formData
-          }
-        );
+        // csv
+        formData2.append("files", knowledgeNode.data.pdfFile);
+        formData2.append("question", input);
+        formData2.append("chatId", "7b0e3130-aa44-4f98-9694-1110571957e9");
+        formData2.append("socketIOClientId","jSwwUNFbXXqaAC58AAEF");
+
+
+
+        // Periksa tipe file
+        const fileType = knowledgeNode.data.pdfFile.type;
+        let url = "https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/52ff5341-453e-48b5-a243-fe203b7c65fa";
+
+        if (fileType === 'text/csv') {
+          url = "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/23c69ef0-b926-4f31-a313-63bfe9bd7a58";
+        } 
+
+        const response = await fetch(url, {
+          method: "POST",
+          body: fileType === 'text/csv' ? formData2 : formData
+        });
 
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -160,6 +174,13 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
 
     } catch (error) {
       console.error('Error fetching chat response:', error);
+      // Add toast notification to display the error
+      toast({
+        title: "Error",
+        description: `Failed to fetch chat response: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        duration: 5000,
+        variant: "destructive",
+      });
       return null;
     }
   };
@@ -373,6 +394,15 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
       return (
         <div key={index} className="mb-2 ">
           {lines.map((line, lineIndex) => {
+            if (line.match(urlRegex)) {
+              // This is a line containing a URL, don't format as numbered list
+              return (
+                <p key={lineIndex}>
+                  {formatTextWithLinks(line)}
+                </p>
+              );
+            }
+
             const match = line.match(numberedListRegex);
             if (match) {
               // This is a numbered list item

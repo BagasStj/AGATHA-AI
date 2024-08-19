@@ -170,11 +170,11 @@ const handleDeleteUser = async (id: string) => {
             onViewChange={handleViewChange} 
           />
         </div>
-        <div className="flex flex-1 pt-16">
+        <div className="flex flex-1 pt-10">
           <div className="fixed left-0 top-16 bottom-0 z-10">
             <AsideComponent onViewChange={handleViewChange} currentView={currentView} />
           </div>
-          <main className={`  ${currentView === 'flow' ? ' flex-1 ml-4 p-1' : 'p-4 flex-1 ml-7'}`}>
+          <main className={`  ${currentView === 'flow' ? ' flex-1 ml-4 p-1' : 'p-4 flex-1 ml-10'}`}>
             {currentView === 'users' ? (
               <DashboardUserComponent 
                 userCount={userCount} 

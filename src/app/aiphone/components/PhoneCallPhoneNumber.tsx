@@ -321,7 +321,7 @@ export default function PhoneCall() {
         <Tabs defaultValue="llm-model" className="w-full" onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-4">
 
-            <TabsList className="grid w-[36vw] grid-cols-3">
+            <TabsList className="grid w-[60vw] grid-cols-3">
               <TabsTrigger value="llm-model" className="flex items-center">
                 <div className={`mr-2 rounded-full w-5 h-5 flex items-center justify-center text-white text-xs ${activeTab === 'llm-model' ? 'bg-purple-500' : 'bg-gray-400'}`}>1</div>
                 <Brain className="mr-2 h-4 w-4" /> LLM Model

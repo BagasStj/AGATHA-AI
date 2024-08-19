@@ -8,7 +8,7 @@ const KV_REST_API_TOKEN = process.env.KV_REST_API_TOKEN;
 export default function AIPhonePage() {
 
   return (
-    <div className="p-1 flex items-center justify-center">
+    <div className="p-1 pt-6 flex items-center justify-center">
       <Card className="w-[92vw] h-[100vh] overflow-hidden shadow-lg">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">AI Phone Call</CardTitle>

@@ -702,7 +702,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               {nodes.find(node => node.data.nodeType === 'vapi') ? (
                 <Button
                   onClick={onPublish}
-                  variant="ghost"
+                  variant="ghost" 
                   className={`ml-2 items-center ${isVapiCalling ? 'bg-green-300' : 'bg-green-500'} hover:bg-[#f4f4f4] text-white`}
                   disabled={isVapiCalling}
                 >
@@ -794,7 +794,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               proOptions={proOptions}
-              defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+              defaultViewport={{ x: 0, y: 0, zoom: 0.1 }}
               className="flex-grow "
             >
               <Controls />

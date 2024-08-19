@@ -40,10 +40,9 @@ const CustomNode = ({ data }: { data: any }) => {
   const isStartOrEnd = data.nodeType === 'Start' || data.nodeType === 'END';
   const isStart = data.nodeType === 'Start';
   const isEnd = data.nodeType === 'END';
-  const nodeWidth = 'w-[24vw]';
 
   return (
-    <div className={`px-4 py-2 shadow-lg rounded-3xl bg-white  ${nodeWidth}`}>
+    <div className={`px-4 py-2 shadow-lg rounded-3xl bg-white w-[27vw]`}>
       <div className="flex items-center min-h-[9vh] my-1">
         <div>
 

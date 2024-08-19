@@ -17,7 +17,7 @@ interface NodeInfoCardKnowledgeRetrievalProps {
     node: Node<NodeData> | null;
     onClose: () => void;
     onUpdateNode: (id: string, data: Partial<NodeData>) => void;
-    onLoadingChange: (isLoading: boolean) => void; // Added this line
+    onLoadingChange: (isLoading: boolean) => void;
 }
 
 const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalProps> = ({ node, onClose, onUpdateNode, onLoadingChange }) => {
@@ -47,14 +47,14 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     }, [node]);
 
     useEffect(() => {
-        onLoadingChange(isLoading); // Call onLoadingChange with isLoading state
+        onLoadingChange(isLoading);
     }, [isLoading, onLoadingChange]);
 
     if (!node) return null;
     let formData = new FormData();
 
 
-    const fetchUpserrt = async () => { //upsertfile
+    const fetchUpserrt = async () => {
         setIsLoading(true);
         if (file && user) {
             formData.append("files", file);
@@ -68,10 +68,8 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             });
         }
         
-        // Tambahkan pengecekan tipe file
         console.log('[file]', file!.type);
         if (file && file.type === 'text/csv') {
-            // Jika file adalah CSV, tidak perlu melakukan fetch
             console.log('CSV file detected. Skipping upsert operation.');
             toast({
                 title: "Success",
@@ -108,7 +106,6 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             return data;
         } catch (error) {
             console.error('Error in fetchUpserrt:', error);
-            // You can add a toast notification here to inform the user about the error
             return null;
         }
     };
@@ -172,7 +169,6 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
             });
             setIsLoading(false);
         } finally {
-            // setIsLoading(false); // Set isLoading to false after handleSave is completed
         }
     };
     const handleFileUpload = (uploadedFile: File) => {
@@ -209,25 +205,25 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
     };
 
     return (
-        <div className="absolute right-4 top-20 w-96 bg-white shadow-xl rounded-lg border border-gray-200 flex flex-col max-h-[calc(100vh-6rem)]">
-            <div className="p-4 flex items-center justify-between">
+        <div className="absolute right-4 top-20 w-full sm:w-96 bg-white shadow-xl rounded-lg border border-gray-200 flex flex-col max-h-[calc(100vh-6rem)]">
+            <div className="p-3 sm:p-4 flex items-center justify-between">
                 <div className="flex items-center">
                     <div className="bg-[#ff47bf] rounded-full p-1 mr-2">
-                        <ScrollText className="w-4 h-4 text-white" />
+                        <ScrollText className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mr-2">Knowledge Document</h3>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-800 mr-2 whitespace-nowrap">Knowledge Document</h3>
                 </div>
                 <button
                     onClick={handleClose}
                     className={`text-gray-400 hover:text-gray-600 ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                     disabled={isLoading}
                 >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
-            <div className="px-6 pb-4 space-y-4 overflow-y-auto flex-grow h-[49vh]">
+            <div className="px-4 sm:px-6 pb-4 space-y-3 sm:space-y-4 overflow-y-auto flex-grow h-[40vh] sm:h-[49vh]">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                     <Input
@@ -250,7 +246,7 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer h-[30vh] flex flex-wrap justify-center items-center ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                    className={`border-2 border-dashed rounded-lg p-3 sm:p-4 text-center cursor-pointer h-[25vh] sm:h-[30vh] flex flex-wrap justify-center items-center ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
                         }`}
                 >
                     <input
@@ -275,11 +271,11 @@ const NodeInfoCardKnowledgeRetrieval: React.FC<NodeInfoCardKnowledgeRetrievalPro
                         Upload Document
                     </Button>
                 </div>
-                {fileName && <p className="mt-2 text-sm text-gray-600 font-bold">Selected file: {fileName}</p>}            </div>
-            <div className="p-6 pt-4 border-t border-gray-200">
+                {fileName && <p className="mt-2 text-xs sm:text-sm text-gray-600 font-bold">Selected file: {fileName}</p>}            </div>
+            <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t border-gray-200">
                 <Button
                     onClick={handleSave}
-                    className="w-full bg-[#6c47ff] flex items-center justify-center"
+                    className="w-full bg-[#6c47ff] flex items-center justify-center text-sm sm:text-base"
                     disabled={isLoading}
                 >
                     {isLoading ? (

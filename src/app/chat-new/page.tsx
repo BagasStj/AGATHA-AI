@@ -610,19 +610,19 @@ export default function ChatNewPage() {
       });
     }
   };
+
   return (
     <>
       <Toaster />
-      <div className="flex p-1 space-x-4 h-full ml-6">
+      <div className="flex flex-col lg:flex-row p-2 lg:p-4 space-y-4 lg:space-y-0 lg:space-x-4 h-full">
         {/* Left Sidebar */}
-        <Card className="w-64">
+        <Card className="w-full lg:w-64 lg:max-w-[20%]">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2 w-full">
               <Button
                 onClick={() => {
                   setCurrentChatId(null);
                   setMessages([]);
-
                 }}
                 className="flex-grow flex items-center justify-center bg-[#6c47ff]"
               >
@@ -648,7 +648,7 @@ export default function ChatNewPage() {
               </DropdownMenu>
             </div>
             <Separator className="my-4" />
-            <ScrollArea className="h-[calc(100vh-180px)] max-h-[69vh]">
+            <ScrollArea className="h-[calc(100vh-180px)] lg:h-[calc(100vh-220px)]">
               {isLoadingChatHistory ? (
                 <div className="flex items-center justify-center h-20">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
@@ -661,7 +661,7 @@ export default function ChatNewPage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div
-                          className="mb-2 w-[14vw] cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
+                          className="mb-2 cursor-pointer hover:bg-gray-100 p-2 rounded flex justify-between items-center"
                         >
                           <div className='w-[7vw]' onClick={() => loadChat(chat.id)}>
                             <h3 className="font-semibold truncate">{chat.titleChat}</h3>
@@ -696,7 +696,7 @@ export default function ChatNewPage() {
 
         {/* Main content */}
         <Card className="flex-1 flex flex-col">
-          <CardHeader className="border-b p-3 pl-6">
+          <CardHeader className="border-b p-3 lg:p-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div>
@@ -716,7 +716,7 @@ export default function ChatNewPage() {
               </TooltipContent>
             </Tooltip>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between p-4">
+          <CardContent className="flex-1 flex flex-col justify-between p-2 lg:p-4">
             {isLoadingChat ? (
               <div className="flex-grow flex flex-col space-y-4 p-4">
                 {[...Array(3)].map((_, index) => (
@@ -730,8 +730,8 @@ export default function ChatNewPage() {
                 ))}
               </div>
             ) : (
-              <ScrollArea className="flex-grow h-full">
-                <div className="max-w-2xl mx-auto py-4 px-4 h-[1vh]">
+              <ScrollArea className="flex-grow h-[calc(100vh-300px)] lg:h-[calc(100vh-340px)]">
+                <div className="max-w-2xl mx-auto py-4 px-2 lg:px-4">
                   {messages.length === 0 ? (
                     <div className="text-center py-10">
                       <h2 className="text-2xl font-bold text-gray-800 mb-2">Chat AI</h2>
@@ -758,7 +758,7 @@ export default function ChatNewPage() {
             )}
             {/* Message input */}
             <form onSubmit={handleSubmit} className="mt-4">
-            {isLoading && (
+              {isLoading && (
                 <div className="flex justify-center items-center space-x-2 mb-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm text-gray-500">AI is typing</span>
@@ -776,18 +776,17 @@ export default function ChatNewPage() {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-             
             </form>
           </CardContent>
         </Card>
 
         {/* Right sidebar */}
-        <Card className=" h-full flex flex-col w-[22%]">
+        <Card className="w-full lg:w-1/4 flex flex-col">
           <CardHeader className="border-b border-gray-200">
-            <CardTitle className='text-lg font-semibold'>List of Prompts</CardTitle>
+            <CardTitle className="text-lg font-semibold">List of Prompts</CardTitle>
           </CardHeader>
-          <CardContent className="flex-grow overflow-hidden p-4">
-            <ScrollArea className="h-full">
+          <CardContent className="flex-grow overflow-hidden p-2 lg:p-4">
+            <ScrollArea className="h-[calc(100vh-180px)] lg:h-[calc(100vh-220px)]">
               {isLoadingListPrompt ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -802,7 +801,7 @@ export default function ChatNewPage() {
                         handleSelectPrompt(prompt);
                       }}
                       key={prompt.id}
-                      className={`cursor-pointer w-[18.5vw] transition-colors hover:bg-gray-100 `}
+                      className={`cursor-pointer w-full transition-colors hover:bg-gray-100 `}
                     >
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
@@ -849,8 +848,8 @@ export default function ChatNewPage() {
               )}
             </ScrollArea>
           </CardContent>
-
         </Card>
+
         {/* PromptDialog */}
         <PromptDialog
           isOpen={isPromptDialogOpen}
@@ -924,6 +923,5 @@ export default function ChatNewPage() {
         </Popover>
       </div>
     </>
-
   );
 }

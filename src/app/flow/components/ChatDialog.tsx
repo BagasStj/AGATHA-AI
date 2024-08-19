@@ -499,9 +499,9 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
 
   const ChatContent = () => (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-        <h2 className="text-lg font-semibold text-gray-700">Chat Assistant</h2>
-        <div className="flex space-x-2">
+      <div className="p-3 sm:p-4 border-b flex justify-between items-center bg-gray-50">
+        <h2 className="text-base sm:text-lg font-semibold text-gray-700">Chat Assistant</h2>
+        <div className="flex space-x-1 sm:space-x-2">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -539,21 +539,21 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
         </div>
       </div>
 
-      <ScrollArea className="flex-grow p-4 space-y-4 h-[1vh]">
+      <ScrollArea className="flex-grow p-2 sm:p-4 space-y-3 sm:space-y-4 h-[1vh]">
         {messages.map((m, index) => (
-          <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-            <div className={`max-w-[70%] ${m.role === 'user' ? 'bg-[#6c47ff] text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-3 shadow`}>
+          <div key={index} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} mb-3 sm:mb-4`}>
+            <div className={`max-w-[85%] sm:max-w-[70%] ${m.role === 'user' ? 'bg-[#6c47ff] text-white' : 'bg-gray-200 text-gray-800'} rounded-lg p-2 sm:p-3 shadow`}>
               <div className={`flex items-start ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 {m.role === 'user' ? (
                   <div className="bg-white rounded-full p-1 ml-2">
-                    <UserIcon className="w-4 h-4 text-[#6c47ff]" />
+                    <UserIcon className="w-3 h-3 sm:w-4 sm:h-4 text-[#6c47ff]" />
                   </div>
                 ) : (
                   <div className="bg-gray-800 rounded-full p-1 mr-2">
-                    <BotMessageSquare className="w-4 h-4 text-white" />
+                    <BotMessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 )}
-                <div className={`break-words ${m.role === 'user' ? 'text-white' : ''}`}>{formatMessage(m.content)}</div>
+                <div className={`break-words text-sm sm:text-base ${m.role === 'user' ? 'text-white' : ''}`}>{formatMessage(m.content)}</div>
               </div>
             </div>
           </div>
@@ -570,12 +570,12 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
   return (
     <>
       <div
-        className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(420px+1rem)]' : 'right-6'} top-40 w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
+        className={`fixed ${isNodeInfoCardOpen ? 'right-[calc(420px+1rem)]' : 'right-6'} top-40 w-full sm:w-96 bg-white shadow-2xl rounded-lg border border-gray-200 h-[70vh] flex flex-col transition-all duration-300 ease-in-out ${isFullscreen ? 'hidden' : ''}`}
       >
         <ChatContent />
       </div>
       <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
-        <DialogContentChat className="max-w-4xl w-full z-[9999999] h-[90vh]">
+        <DialogContentChat className="max-w-4xl w-full z-[9999999] h-[90vh] sm:h-[80vh] md:h-[85vh] lg:h-[90vh]">
           <ChatContent />
         </DialogContentChat>
       </Dialog>

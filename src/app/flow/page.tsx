@@ -186,10 +186,10 @@ export default function FlowPage() {
   );
 
   return (
-    <div className="p-4 flex h-[89vh]">
-      <Card className="w-[15vw] ml-[2vw] mr-2 overflow-hidden shadow-lg">
+    <div className="p-4 pt-8 pl-12 flex h-full flex-col lg:flex-row">
+      <Card className="w-full lg:w-[20vw] xl:w-[15vw] mb-4 lg:mb-0 lg:mr-4 overflow-hidden shadow-lg">
         <CardHeader className="space-y-1 border-b-2 mb-4">
-          <CardTitle className="text-2xl font-bold">AI Flow Diagram</CardTitle>
+          <CardTitle className="text-xl lg:text-xl font-bold whitespace-nowrap">AI Flow Diagram</CardTitle>
           <CardDescription>Flow List</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -199,7 +199,7 @@ export default function FlowPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
           />
-          <div className="h-[58vh] overflow-auto">
+          <div className="h-[40vh] lg:h-[58vh] overflow-auto">
             {isLoading ? (
               // Render skeletons while loading
               Array(5).fill(0).map((_, index) => <FlowSkeleton key={index} />)
@@ -209,15 +209,15 @@ export default function FlowPage() {
                   key={flow.id}
                   className={`p-3 border-b border-gray-200 hover:bg-gray-100 cursor-pointer ${selectedFlow === flow.id ? 'bg-blue-100' : ''} flex justify-between items-center`}
                 >
-                  <div onClick={() => setSelectedFlow(flow.id)}>
-                    <h3 className="font-semibold">{flow.name}</h3>
-                    <p className="text-sm text-gray-500">
+                  <div onClick={() => setSelectedFlow(flow.id)} className="flex-grow">
+                    <h3 className="font-semibold text-sm lg:text-base">{flow.name}</h3>
+                    <p className="text-xs lg:text-sm text-gray-500">
                       {format(new Date(flow.createdAt), 'MMM d, yyyy HH:mm')}
                     </p>
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger>
-                      <MoreVertical className="h-5 w-5 text-gray-500" />
+                      <MoreVertical className="h-4 w-4 lg:h-5 lg:w-5 text-gray-500" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <AlertDialog>
@@ -251,13 +251,17 @@ export default function FlowPage() {
         </CardContent>
       </Card>
       <div className="flex-1 overflow-hidden shadow-lg">
-        <div className="p-0 h-full">
-          <FlowComponent selectedFlowId={selectedFlow} onFlowSaved={onFlowSaved}
+        <div className="h-full">
+          <FlowComponent 
+            selectedFlowId={selectedFlow} 
+            onFlowSaved={onFlowSaved}
             onFlowDeleted={() => {
               if (selectedFlow) {
                 deleteFlow(selectedFlow);
               }
-            }} user={user} />
+            }} 
+            user={user} 
+          />
         </div>
       </div>
     </div>

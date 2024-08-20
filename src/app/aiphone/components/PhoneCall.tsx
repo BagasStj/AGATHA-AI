@@ -144,7 +144,7 @@ export default function PhoneCall() {
 
       setIsCallActive(true);
       setCallStatus('Calling...');
-      toast({ title: "Calling Start", description: "Please wait a moment",className: "bg-green-100 border-green-400 text-green-700" });
+      toast({ title: "Calling Start", description: "Please wait a moment", className: "bg-green-100 border-green-400 text-green-700" });
       console.log('GET PARAMS', defaultCall);
 
       let callOptions: any = {
@@ -170,7 +170,7 @@ export default function PhoneCall() {
       const call = await vapiClient.start({
         "firstMessage": defaultCall.firstMessage,
         "transcriber": {
-          "model":  "nova-2",
+          "model": "nova-2",
           "language": "id",
           "provider": "deepgram"
         },
@@ -184,7 +184,14 @@ export default function PhoneCall() {
             },
           ],
           // "systemPrompt": "",
-          "temperature": defaultCall.model.temperature
+          "temperature": defaultCall.model.temperature,
+          knowledgeBase: {
+            provider: "canonical",
+            topK: 2,
+            fileIds: [
+              "f1ebb3de-6d14-4e1d-8cee-0ea143ea2c46"
+            ]
+          }
         },
         "voice": {
           "provider": "11labs",
@@ -201,12 +208,12 @@ export default function PhoneCall() {
       //   setCallStatus('Call ended');
       //   setIsCallActive(false);
       // });
-      
+
 
       vapiClient.on('call-start', () => {
-        toast({ title: "Call Status", description: "Ringing...",className: "bg-green-100 border-green-400 text-green-700" });
+        toast({ title: "Call Status", description: "Ringing...", className: "bg-green-100 border-green-400 text-green-700" });
       });
-      vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" ,className: "bg-green-100 border-green-400 text-green-700"}));
+      vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected", className: "bg-green-100 border-green-400 text-green-700" }));
       vapiClient.on('call-end', () => {
         toast({ title: "Call Status", description: "Call ended", className: "bg-red-100 border-red-400 text-red-700" });
         setIsCallActive(false);

@@ -8,7 +8,7 @@ const getNodeIcon = (type: string) => {
       return <Home className="w-6 h-6 text-white" />;
     case 'END':
       return <Goal className="w-6 h-6 text-white" />;
-    case 'vapi':
+    case 'telephone':
       return <Phone className="w-6 h-6 text-white" />;
     case 'Knowledge Document':
       return <ScrollText className="w-6 h-6 text-white" />;
@@ -25,7 +25,7 @@ const getNodeColor = (type: string) => {
       return 'bg-blue-500';
     case 'END':
       return 'bg-orange-500';
-    case 'vapi':
+    case 'telephone':
       return 'bg-green-500';
     case 'Knowledge Document':
       return 'bg-[#ff47bf]';

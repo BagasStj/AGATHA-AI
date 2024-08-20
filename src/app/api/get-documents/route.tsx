@@ -7,6 +7,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const userId = url.searchParams.get('userId');
+    const limit = url.searchParams.get('limit') ? parseInt(url.searchParams.get('limit')!) : 100;
 
     if (!userId) {
       return NextResponse.json({ error: 'UserId is required' }, { status: 400 });
@@ -25,6 +26,7 @@ export async function GET(request: Request) {
       orderBy: {
         created: 'desc',
       },
+      take: limit,
     });
 
     return NextResponse.json(documents);

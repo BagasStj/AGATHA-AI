@@ -93,7 +93,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
   const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
   const [showVapiPopup, setShowVapiPopup] = useState(false);
   const [isDocumentViewOpen, setIsDocumentViewOpen] = useState(false);
-  const [documents, setDocuments] = useState<{ id: number; name: string; created: string; }[]>([]);
+  const [documents, setDocuments] = useState([]);
   const [isNodeInfoLoading, setIsNodeInfoLoading] = useState(false);
   const [isVapiCalling, setisVapiCalling] = useState(false)
 
@@ -166,13 +166,33 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
       setEdges([]);
       setCurrentFlowId(null);
     }
-    // if (user) {
-    //   fetchDocuments();
-    // }
+ 
   }, [selectedFlowId, loadFlow, onFlowDeleted, user]);
 
+  useEffect(() => {
+    if (user) {
+      fetchDocuments();
+    }
+  }, [user]);
 
-
+  const fetchDocuments = async () => {
+    try {
+      const response = await fetch(`/api/get-documents?userId=${user?.id}&limit=1`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      const data = await response.json();
+      console.log("GET DATA DOCUMENT", data)
+      setDocuments(data);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
 
   const onUpdateNode = useCallback((id: string, data: Partial<NodeData>) => {
@@ -426,7 +446,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     }
 
     const knowledgeDocumentNode = nodes.find(node => node.data.nodeType === "Knowledge Document");
-    const vapiNode = nodes.find(node => node.data.nodeType === 'vapi');
+    const vapiNode = nodes.find(node => node.data.nodeType === 'telephone');
     const knowledgeURLNode = nodes.find(node => node.data.nodeType === "Knowledge URL");
     // console.log('NODES', knowledgeURLNode ,nodes );
 
@@ -447,17 +467,19 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
 
 
     if (knowledgeDocumentNode) {
-      if (!knowledgeDocumentNode.data.fileName) {
-        toast({
-          title: "Error",
-          description: "Please upload a document before running.",
-          variant: "destructive",
-        });
-        setSelectedNode(knowledgeDocumentNode);
+      if (documents.length == 0) {
+        if (!knowledgeDocumentNode.data.fileName) {
+          toast({
+            title: "Error",
+            description: "Please upload a document before running.",
+            variant: "destructive",
+          });
+          setSelectedNode(knowledgeDocumentNode);
+          return;
+        }
+        setShowChatDialog(true);
         return;
       }
-      setShowChatDialog(true);
-      return;
     }
 
     if (vapiNode) {
@@ -552,10 +574,10 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         );
 
         vapiClient.on('call-start', () => {
-          toast({ title: "Call Status", description: "Ringing...",className: "bg-green-100 border-green-400 text-green-700" });
+          toast({ title: "Call Status", description: "Ringing...", className: "bg-green-100 border-green-400 text-green-700" });
           setShowVapiPopup(true);
         });
-        vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected" ,className: "bg-green-100 border-green-400 text-green-700"}));
+        vapiClient.on('speech-start', () => toast({ title: "Call Status", description: "Connected", className: "bg-green-100 border-green-400 text-green-700" }));
         vapiClient.on('call-end', () => {
           setisVapiCalling(false)
           toast({ title: "Call Status", description: "Call ended", className: "bg-green-100 border-green-400 text-green-700" });
@@ -606,6 +628,28 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
     []
   );
 
+  const isNodeTypeDisabled = useCallback((nodeType: string) => {
+    const hasLLMCustomPrompt = nodes.some(node => node.data.nodeType === 'LLM With Custom Prompt');
+    const hasLLMByKnowledge = nodes.some(node => node.data.nodeType === 'LLM By Knowledge');
+    const hasKnowledgeDocument = nodes.some(node => node.data.nodeType === 'Knowledge Document');
+    const hasKnowledgeURL = nodes.some(node => node.data.nodeType === 'Knowledge URL');
+    const hasTelephone = nodes.some(node => node.data.nodeType === 'telephone');
+    const hasAnyKnowledgeRetrieval = hasKnowledgeDocument || hasKnowledgeURL;
+
+    switch (nodeType) {
+      case 'LLM With Custom Prompt':
+        return hasAnyKnowledgeRetrieval || hasTelephone || hasLLMByKnowledge;
+      case 'LLM By Knowledge':
+        return hasTelephone || hasLLMCustomPrompt;
+      case 'Knowledge Document':
+      case 'Knowledge URL':
+        return hasKnowledgeDocument || hasKnowledgeURL || hasTelephone || hasLLMCustomPrompt;
+      case 'telephone':
+        return hasLLMCustomPrompt || hasLLMByKnowledge || hasAnyKnowledgeRetrieval;
+      default:
+        return false;
+    }
+  }, [nodes]);
 
   const nodeTypeList = [
     { type: 'Start', label: 'START', icon: Home, bgColor: 'bg-blue-500' },
@@ -649,7 +693,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
         },
       ]
     },
-    { type: 'vapi', label: 'Vapi', icon: Phone, bgColor: 'bg-green-500', description: 'Vapi AI Call' },
+    { type: 'telephone', label: 'Telephone', icon: Phone, bgColor: 'bg-green-500', description: 'Telephone AI' },
     { type: 'END', label: 'END', icon: Goal, bgColor: 'bg-orange-500' },
   ];
   if (loadingProgress !== null) {
@@ -699,10 +743,10 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               {/* <Button onClick={onSaveAs} variant="ghost" className="ml-2 bg-blue-500 hover:bg-blue-400 text-white" title="Save As">
                 <SaveAll className="h-5 w-5" />
               </Button> */}
-              {nodes.find(node => node.data.nodeType === 'vapi') ? (
+              {nodes.find(node => node.data.nodeType === 'telephone') ? (
                 <Button
                   onClick={onPublish}
-                  variant="ghost" 
+                  variant="ghost"
                   className={`ml-2 items-center ${isVapiCalling ? 'bg-green-300' : 'bg-green-500'} hover:bg-[#f4f4f4] text-white`}
                   disabled={isVapiCalling}
                 >
@@ -751,8 +795,12 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                       </DropdownMenuTrigger>
                       <DropdownMenuContent side="right" alignOffset={-5} className="ml-2">
                         {nodeType.subMenu!.map((subItem) => (
-
-                          <DropdownMenuItem key={subItem.type} onSelect={() => onAddNode(subItem.type)} className="flex items-center">
+                          <DropdownMenuItem 
+                            key={subItem.type} 
+                            onSelect={() => !isNodeTypeDisabled(subItem.type) && onAddNode(subItem.type)} 
+                            className={`flex items-center ${isNodeTypeDisabled(subItem.type) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            disabled={isNodeTypeDisabled(subItem.type)}
+                          >
                             <div className={`w-6 h-6 rounded-full ${subItem.bgColor} flex items-center justify-center mr-2`}>
                               <subItem.icon className="w-4 h-4 text-white" />
                             </div>
@@ -762,7 +810,12 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
                       </DropdownMenuContent>
                     </DropdownMenu>
                   ) : (
-                    <DropdownMenuItem key={nodeType.type} onSelect={() => onAddNode(nodeType.type)} className="flex items-center">
+                    <DropdownMenuItem 
+                      key={nodeType.type} 
+                      onSelect={() => !isNodeTypeDisabled(nodeType.type) && onAddNode(nodeType.type)} 
+                      className={`flex items-center ${isNodeTypeDisabled(nodeType.type) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={isNodeTypeDisabled(nodeType.type)}
+                    >
                       <div className={`w-6 h-6 rounded-full ${nodeType.bgColor} flex items-center justify-center mr-2`}>
                         <nodeType.icon className="w-4 h-4 text-white" />
                       </div>
@@ -802,7 +855,7 @@ function FlowComponent({ selectedFlowId, onFlowSaved, onFlowDeleted }: { selecte
               <Background bgColor='#f4f4f4' />
             </ReactFlow>
             {selectedNode && !['Start', 'END'].includes(selectedNode.data.nodeType as string) && (
-              selectedNode.data.nodeType === 'vapi' ? (
+              selectedNode.data.nodeType === 'telephone' ? (
                 <NodeInfoCardVapi
                   node={selectedNode as Node<NodeData & Record<string, unknown>>}
                   onClose={() => closeNodeInfo('nodeInfoVapi')}

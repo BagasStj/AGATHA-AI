@@ -119,7 +119,7 @@ const NodeInfoCardVapi: React.FC<NodeInfoCardVapiProps> = ({ node, onClose, onUp
                     <div className="bg-green-500 rounded-full p-1 mr-2">
                         <Phone className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-800 mr-2">Set Phone Vapi</h3>
+                    <h3 className="text-lg font-bold text-gray-800 mr-2">Setting  Telephone</h3>
                 </div>
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

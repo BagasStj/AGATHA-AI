@@ -121,7 +121,7 @@ const ChatDialog: React.FC<ChatDialogProps> = ({ onClose, selectedNode, nodes, e
 
         // Periksa tipe file
         const fileType = knowledgeNode.data.pdfFile.type;
-        let url = "https://flowiseai-railway-production-9629.up.railway.app/api/v1/vector/upsert/52ff5341-453e-48b5-a243-fe203b7c65fa";
+        let url = "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/52ff5341-453e-48b5-a243-fe203b7c65fa";
 
         if (fileType === 'text/csv') {
           url = "https://flowiseai-railway-production-9629.up.railway.app/api/v1/prediction/23c69ef0-b926-4f31-a313-63bfe9bd7a58";
